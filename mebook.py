@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# mebook_spider - main.py
+# mebook_spider - mebook.py
 # Created by JT on 11-Aug-18 20:05.
 # 
 # author = 'JT <jiting@jtcat.com>'
@@ -11,6 +11,7 @@ import random
 import json
 from lxml import html
 from time import sleep
+import re
 
 headers = {
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
@@ -27,7 +28,7 @@ index = requests.get(base_url, headers=headers)
 tree = html.fromstring(index.text)
 info = tree.xpath('//*[@id="primary"]/div[2]/div/span[1]')  # get total pages number
 # total_pages = info[0].text.split(" ")[5]
-total_pages = 226  # for test 226 2017.10.26
+total_pages = 244  # for test 226 2017.10.26
 print("网站主目录总页数%s" % total_pages)
 
 data = {}
@@ -74,7 +75,7 @@ try:
                             'tag': [tag[x].text for x in range(len(tag))],
                         }
                     ]
-        sleep(random.uniform(0.3, 1))
+        sleep(random.uniform(0.4, 0.8))
 except Exception as e:
     print("发生未知错误", e)
 
@@ -87,9 +88,15 @@ for i in data:
         key = tree.xpath("/html/body/div[3]/p[6]")
         m = key[0].text.lstrip("网盘密码：").replace("密码：", " ").replace("\xa0\xa0\xa0\xa0\xa0", " ").split(" ")
         print(m)
+        if len(m) == 1:
+            continue
+        if len(m) == 3:
+            m.pop()
+            print(m)
         key = {}
         for j in range(0, 4, 2):
-            key[m[j]] = m[j+1]
+            re_key = re.match('([a-zA-Z\d]*)', m[j+1])
+            key[m[j]] = re_key.group(1)
         data[i][0]['key'] = key
         print("正在解析下载链接")
         dl_link = {}
@@ -99,14 +106,28 @@ for i in data:
                 break
             if not info[0].text:
                 info1 = tree.xpath('/html/body/div[5]/a[%s]/font' % n)
-                dl_link[info1[0].text] = info[0].attrib["href"]
+                link = re.match('(?:[^a-zA-Z\d]*)([:A-Za-z\d/._!\-]+)(?:[\s\W\D]*)', info[0].attrib["href"])
+                dl_link[info1[0].text] = link.group(1)
             else:
-                dl_link[info[0].text] = info[0].attrib["href"]
+                link = re.match('(?:[^a-zA-Z\d]*)([:A-Za-z\d/._!\-]+)(?:[\s\W\D]*)', info[0].attrib["href"])
+                dl_link[info[0].text] = link.group(1)
         data[i][0]["download"] = dl_link
     except Exception as e:
         print("发生未知错误", e)
-    sleep(random.uniform(0.3, 1))
+    sleep(random.uniform(0.4, 0.8))
 
 print("正在保存数据")
 with open("data.json", "w") as f:
     f.write(json.dumps(data))
+
+with open("data.json", "r", encoding="utf-8") as f:
+    data = json.load(f)
+
+with open('dl_baidupan.txt', "w", encoding="utf-8") as f:
+    for i in data:
+        if 'download' in data[i][0]:
+            if '百度网盘' in data[i][0]['download']:
+                key = data[i][0]['key']['百度网盘']
+                f.write("%s %s %s\n" % (i, data[i][0]['download']['百度网盘'], key))
+        else:
+            print(data[i][0]['title'], "id:", i, "不存在下载链接")
