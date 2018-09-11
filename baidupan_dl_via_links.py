@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# mebook_spider - download.py
+# mebook_spider - baidupan_dl_via_links.py
 # Created by JT on 04-Sep-18 20:54.
 
 import time
 from selenium import webdriver
 from ast import literal_eval
-import json
 
 
 def baidu_login(name, passwd):
@@ -100,8 +99,7 @@ if __name__ == '__main__':
         driver.maximize_window()
 
         driver.get("https://pan.baidu.com/")
-        # cookies = literal_eval(input("输入现有的百度网盘 cookies:\n") or "[0]")
-        cookies = [{'domain': '.pan.baidu.com', 'expiry': 1567779220, 'httpOnly': False, 'name': 'Hm_lvt_7a3960b6f067eb0085b7f96ff5e660b0', 'path': '/', 'secure': False, 'value': '1536212067'}, {'domain': '.baidu.com', 'expiry': 1567748044.311379, 'httpOnly': False, 'name': 'BAIDUID', 'path': '/', 'secure': True, 'value': 'AAEB9E494C663DF7809919A066B10010:FG=1'}, {'domain': '.pan.baidu.com', 'expiry': 1538835001.961357, 'httpOnly': False, 'name': 'BDCLND', 'path': '/', 'secure': False, 'value': 'SvIY56yBxhZbYv6Be7o2u9XnSryqB8V6t1dTSq5qyYM%3D'}, {'domain': '.baidu.com', 'expiry': 1795412064.801408, 'httpOnly': True, 'name': 'BDUSS', 'path': '/', 'secure': True, 'value': '1pdW5yeWZEVURVUy1KaWM0V0N-bVBHS1hvbEoxdFZ6VkJBcVowWnIteGdTYmhiQVFBQUFBJCQAAAAAAAAAAAEAAAAnc8amvMXM~UNOAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGC8kFtgvJBbVC'}, {'domain': '.pan.baidu.com', 'expiry': 1538804066.095932, 'httpOnly': True, 'name': 'SCRC', 'path': '/', 'secure': True, 'value': '3762581b6ee064091095b955aa6e6b32'}, {'domain': 'pan.baidu.com', 'expiry': 4128212065.878977, 'httpOnly': False, 'name': 'pan_login_way', 'path': '/', 'secure': True, 'value': '1'}, {'domain': '.baidu.com', 'expiry': 1537107222, 'httpOnly': False, 'name': 'cflag', 'path': '/', 'secure': False, 'value': '15%3A3'}, {'domain': '.pan.baidu.com', 'httpOnly': False, 'name': 'Hm_lpvt_7a3960b6f067eb0085b7f96ff5e660b0', 'path': '/', 'secure': False, 'value': '1536243220'}, {'domain': '.pan.baidu.com', 'expiry': 1567748065.966557, 'httpOnly': False, 'name': 'PANWEB', 'path': '/', 'secure': True, 'value': '1'}, {'domain': '.pan.baidu.com', 'expiry': 1538804066.095976, 'httpOnly': True, 'name': 'STOKEN', 'path': '/', 'secure': True, 'value': '1471b7e5eca709a0b4bfd0eb946eb03b4f359ef35320278cdb7e38979e23d852'}, {'domain': '.pan.baidu.com', 'expiry': 1536329622.173922, 'httpOnly': True, 'name': 'PANPSC', 'path': '/', 'secure': False, 'value': '13843120556196238077%3Au2C8FyuEb6irUYYZF9XxLen90oj%2BY%2FIs2NEnrqrLiykD2mOuWxR6GvFMne%2FXPWb6eJst8Txon9PCCcggVYLDBIB1mPC8kVmTlANdbjVx0gaCzr5I%2F7Ky%2BF5zx1fkxHzFOmqbmeevRtYDzLGxCF9yjchTKu%2BdwTb%2Fnr9yQoCeHI88g1PcRcrciMZ09rQO2Yg1vdvDG1Aevkc%3D'}]
+        cookies = literal_eval(input("输入现有的百度网盘 cookies:\n") or "[0]")
 
         if len(cookies) < 2:
             login_name = input('请输入你的登录账号:\n')
