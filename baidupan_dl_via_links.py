@@ -51,7 +51,7 @@ def baidupan_resave():
             else:
                 key = ""
             driver.get(share_link)
-            time.sleep(1)
+            time.sleep(3)
             try:
                 if '不存在' in driver.title:
                     print("ID", data[0], '链接失效')
@@ -60,27 +60,27 @@ def baidupan_resave():
                 print("Error:", e)
                 continue
             if key != "":
-                pw_field = driver.find_element_by_id('xfspgN3b')
+                pw_field = driver.find_element_by_id('eoX9ze')
                 pw_field.send_keys(key)
-                submit_button = driver.find_element_by_xpath('//*[@id="fufc62wg"]/a')
+                submit_button = driver.find_element_by_xpath('//*[@id="qwl4EQ4"]/a')
                 submit_button.click()
-                time.sleep(2)
+                time.sleep(3)
                 # 开始转存操作
                 file_title = driver.find_element_by_xpath('//*[@id="bd-main"]/div/div[1]/div/div[1]/h2').text
                 print("ID", data[0], "转存", file_title, end=" -> ")
                 select_all_button = driver.find_element_by_xpath('//*[@id="shareqr"]/div[2]/div[2]/div/ul[1]/li[1]/div/span[1]')
                 select_all_button.click()
-                time.sleep(0.5)
+                time.sleep(2)
                 resave_button = driver.find_element_by_xpath('//*[@id="shareqr"]/div[2]/div[2]/div/div/div/div[2]/a[1]')
                 resave_button.click()
-                time.sleep(1.5)
+                time.sleep(3)
                 if '最近保存路径' in driver.find_element_by_xpath('//*[@id="fileTreeDialog"]/div[3]').text:
                     driver.find_element_by_xpath('//*[@id="fileTreeDialog"]/div[3]/span').click()
                     save_confirm_button = driver.find_element_by_xpath('//*[@id="fileTreeDialog"]/div[4]/a[2]')
                 else:
                     save_confirm_button = driver.find_element_by_xpath('//*[@id="fileTreeDialog"]/div[3]/a[2]')
                 save_confirm_button.click()
-                time.sleep(2)
+                time.sleep(3)
                 try:
                     if "成功" in driver.find_element_by_xpath('/html/body/div[5]/div/span[2]').text:
                         print("成功")
@@ -94,12 +94,13 @@ if __name__ == '__main__':
     try:
         options = webdriver.ChromeOptions()
         # options.binary_location = '/Applications/Google Chrome'
-        # options.add_argument('headless')
+        options.add_argument('headless')
         driver = webdriver.Chrome(chrome_options=options)
         driver.maximize_window()
 
         driver.get("https://pan.baidu.com/")
-        cookies = literal_eval(input("输入现有的百度网盘 cookies:\n") or "[0]")
+        # cookies = literal_eval(input("输入现有的百度网盘 cookies:\n") or "[0]")
+        cookies = [0]
 
         if len(cookies) < 2:
             login_name = input('请输入你的登录账号:\n')
@@ -110,6 +111,7 @@ if __name__ == '__main__':
         driver.refresh()
         # 完成登录操作
         baidupan_resave()
+        time.sleep(60)
         driver.close()
     except Exception as err:
         print('主程序错误:', err)
