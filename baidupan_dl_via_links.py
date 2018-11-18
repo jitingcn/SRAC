@@ -64,13 +64,13 @@ def baidupan_resave():
                 pw_field.send_keys(key)
                 submit_button = driver.find_element_by_xpath('//*[@id="qwl4EQ4"]/a')
                 submit_button.click()
-                time.sleep(3)
+                time.sleep(5)
                 # 开始转存操作
                 file_title = driver.find_element_by_xpath('//*[@id="bd-main"]/div/div[1]/div/div[1]/h2').text
                 print("ID", data[0], "转存", file_title, end=" -> ")
                 select_all_button = driver.find_element_by_xpath('//*[@id="shareqr"]/div[2]/div[2]/div/ul[1]/li[1]/div/span[1]')
                 select_all_button.click()
-                time.sleep(2)
+                time.sleep(3)
                 resave_button = driver.find_element_by_xpath('//*[@id="shareqr"]/div[2]/div[2]/div/div/div/div[2]/a[1]')
                 resave_button.click()
                 time.sleep(3)
