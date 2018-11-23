@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# lightnovel - lightnovel-epub.py
+# lightnovel - lightnovel_epub.py
 # Created by JT on 13-Nov-18 10:17.
 # Blog: https://blog.jtcat.com/
 # 
@@ -61,34 +61,61 @@ def add_thread_info():
 
 
 def save_thread_info():
-    with open("threadInfo.json", "w") as f:
-        f.write(json.dumps(threadInfo))
+    print("正在保存...", end=' -> ')
+    if threadInfo is not None:
+        with open("lightnovel_epub.json", "w") as f:
+            f.write(json.dumps(threadInfo, sort_keys=True, indent=4))
+        print('保存完毕')
+    else:
+        print('无数据输入')
 
 
-def get_download_info():  # TODO 完善 网页分析
-    all_links = driver.find_elements_by_xpath('//a')
-    info = []
-    for x in all_links:
-        link = x.get_attribute('href')
-        try:
-            if 'baidu' and '/s/' in link:
-                dl_link = link
-                dl_link_description = x.find_element_by_xpath('..').text
-                dl_text = dl_link_description if dl_link_description is not None else x.text
-                if '密码' or '密碼' or '提取码' in dl_text:
-                    code = re.findall("(?!epub)([\w\d]{4})", dl_text)[-1]  # TODO 需要修复 这个地方有bug会导致程序中断
-                    info.append({'link': dl_link, 'title': dl_text, 'code': code})
+def get_download_info():
+    all_links = driver.find_elements_by_xpath('//a[contains(@href, "baidu.com/s")]')
+    if len(all_links) >= 1:  # 获取百度云分享
+        info = []
+        for x in all_links:
+            print(driver.title[:30])
+            dl_link = x.get_attribute('href')
+            print('链接: ', dl_link)
+            dl_link_description = x.find_element_by_xpath('..').text \
+                if len(x.find_element_by_xpath('..').text) <= 60 else x.text
+            dl_text = driver.title[:-30] if x.text == dl_link else dl_link_description
+            code = find_code(dl_link_description)
+            if code:
+                info.append({'link': dl_link, 'title': dl_text, 'code': code})
+            else:
+                info.append({'link': dl_link, 'title': dl_text})
+        return info
+    else:
+        pass  # TODO 论坛附件及其他网盘下载方式
+        return []
+
+
+def find_code(dl_link_description):
+    post_massage = driver.find_element_by_xpath('//*[starts-with(@id, "postmessage")]')
+    post_massage_list = post_massage.text.split("\n")
+    for y in post_massage_list:
+        if dl_link_description in y:
+            code = re.findall("(?!epub)(?!\d+MB)([a-zA-Z0-9]{4})", y)
+            if len(code) == 0:
+                print("未找到提取码")
+                return []
+            else:
+                code = code[-1]
+                if code in dl_link_description:
+                    print('似乎没有提取码', code)
+                    return []
                 else:
-                    info.append({'link': dl_link, 'title': dl_text})
-        except TypeError:
-            pass
-    return info
+                    print('提取码: ', code)
+                    return code
+    return []
 
 
 if __name__ == '__main__':
     options = webdriver.ChromeOptions()
     # options.binary_location = '/Applications/Google Chrome'
-    # options.add_argument('headless')
+    options.add_argument('headless')
     driver = webdriver.Chrome(chrome_options=options)
     driver.maximize_window()
     try:
@@ -105,22 +132,24 @@ if __name__ == '__main__':
         lastPage = int(
             re.search("([\d]+)", driver.find_element_by_xpath('//*[@id="fd_page_bottom"]/div/a[10]').text).group(0))
         for i in range(2, lastPage + 1):
+            print('获取第 %s 页信息' % i)
             driver.get(baseUrl + "%s%s" % (i, '.html'))
-            time.sleep(1.5)
+            time.sleep(1.2)
             add_thread_info()
 
         save_thread_info()
         # search link
         for i in range(len(threadInfo)):
             driver.get(threadInfo[i]['link'])
-            time.sleep(1.5)
+            time.sleep(0.3)
             download_info = get_download_info()
             if len(download_info) == 0:
                 download_info = 'Unknown'
             threadInfo[i]['download'] = download_info
 
-        save_thread_info()
+        # save_thread_info()
     except Exception as e:
         print(e)
     finally:
+        save_thread_info()
         driver.close()
