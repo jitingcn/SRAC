@@ -60,9 +60,9 @@ def baidupan_resave():
                 print("Error:", e)
                 continue
             if key != "":
-                pw_field = driver.find_element_by_id('eoX9ze')
+                pw_field = driver.find_element_by_id('xxauBLvX')
                 pw_field.send_keys(key)
-                submit_button = driver.find_element_by_xpath('//*[@id="qwl4EQ4"]/a')
+                submit_button = driver.find_element_by_xpath('//*[@id="jqqaqz2q"]/a')
                 submit_button.click()
                 time.sleep(5)
                 # 开始转存操作
