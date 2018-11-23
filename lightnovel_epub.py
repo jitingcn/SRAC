@@ -16,10 +16,12 @@ from selenium import webdriver
 
 def login():
     try:
-        cookies = json.loads(getpass.getpass("请黏贴轻国cookies或直接回车跳过(输入无回显):"))
-    except TypeError or json.decoder.JSONDecodeError:
+        cookies = json.loads(getpass.getpass("请黏贴轻国cookies或直接回车跳过(无回显):"))
+        if not cookies:
+            cookies = None
+    except json.decoder.JSONDecodeError:
         cookies = None
-    if cookies is None:
+    if not cookies:
         driver.get("https://www.lightnovel.cn/")
         time.sleep(5)
 
@@ -35,7 +37,7 @@ def login():
         driver.find_element_by_name("u").clear()
         driver.find_element_by_name("u").send_keys(str(input("QQ号:")))
         driver.find_element_by_name("p").clear()
-        driver.find_element_by_name("p").send_keys(str(getpass.getpass("密码:(无回显)")))
+        driver.find_element_by_name("p").send_keys(str(getpass.getpass("密码(无回显):")))
         driver.find_element_by_id("login_button").click()
         time.sleep(4)
         # login complete
@@ -61,12 +63,15 @@ def add_thread_info():
 
 
 def save_thread_info():
-    print("正在保存...", end=' -> ')
-    if threadInfo is not None:
-        with open("lightnovel_epub.json", "w", encoding='utf-8') as f:
-            json.dump(threadInfo, f, sort_keys=True, indent=4, ensure_ascii=False)
-        print('保存完毕')
-    else:
+    try:
+        print("正在保存...", end=' -> ')
+        if threadInfo is not None:
+            with open("lightnovel_epub.json", "w", encoding='utf-8') as f:
+                json.dump(threadInfo, f, sort_keys=True, indent=4, ensure_ascii=False)
+            print('保存完毕')
+        else:
+            print('无数据输入')
+    except NameError:
         print('无数据输入')
 
 
@@ -115,13 +120,13 @@ def find_code(dl_link_description):
 if __name__ == '__main__':
     options = webdriver.ChromeOptions()
     # options.binary_location = '/Applications/Google Chrome'
-    options.add_argument('headless')
+    # options.add_argument('headless --disable-gpu ')
     driver = webdriver.Chrome(chrome_options=options)
     driver.maximize_window()
     try:
         login()
-        # driver.get("https://www.lightnovel.cn/")
-        # time.sleep(2)
+        driver.get("https://www.lightnovel.cn/")
+        time.sleep(1)
         lightBookEPUBForum = driver.find_element_by_xpath('//*[@id="category_3"]/table/tbody/tr[3]/td[2]/p[1]/a[2]')
         baseUrl = lightBookEPUBForum.get_attribute('href')[:-6]
         lightBookEPUBForum.click()
