@@ -80,13 +80,13 @@ def get_download_info():
     if len(all_links) >= 1:  # 获取百度云分享
         info = []
         for x in all_links:
-            print(driver.title[:30])
+            print(driver.title[:-30])
             dl_link = x.get_attribute('href')
             print('链接: ', dl_link)
             dl_link_description = x.find_element_by_xpath('..').text \
                 if len(x.find_element_by_xpath('..').text) <= 60 else x.text
             dl_text = driver.title[:-30] if x.text == dl_link else dl_link_description
-            code = find_code(dl_link_description)
+            code = find_code(dl_link_description, dl_link)
             if code:
                 info.append({'link': dl_link, 'title': dl_text, 'code': code})
             else:
@@ -97,7 +97,7 @@ def get_download_info():
         return []
 
 
-def find_code(dl_link_description):
+def find_code(dl_link_description, dl_link):
     post_massage = driver.find_element_by_xpath('//*[starts-with(@id, "postmessage")]')
     post_massage_list = post_massage.text.split("\n")
     for y in post_massage_list:
@@ -108,7 +108,7 @@ def find_code(dl_link_description):
                 return []
             else:
                 code = code[-1]
-                if code in dl_link_description:
+                if code in dl_link:
                     print('似乎没有提取码', code)
                     return []
                 else:
