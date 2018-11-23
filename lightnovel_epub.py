@@ -64,7 +64,7 @@ def save_thread_info():
     print("正在保存...", end=' -> ')
     if threadInfo is not None:
         with open("lightnovel_epub.json", "w") as f:
-            f.write(json.dumps(threadInfo, sort_keys=True, indent=4))
+            json.dump(threadInfo, f, sort_keys=True, indent=4, ensure_ascii=False)
         print('保存完毕')
     else:
         print('无数据输入')
