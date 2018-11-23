@@ -120,9 +120,10 @@ def find_code(dl_link_description):
 if __name__ == '__main__':
     options = webdriver.ChromeOptions()
     # options.binary_location = '/Applications/Google Chrome'
-    # options.add_argument('headless --disable-gpu ')
+    options.add_argument('headless')
+    options.add_argument('log-level=2')
+    # options.add_argument('start-maximized')
     driver = webdriver.Chrome(chrome_options=options)
-    driver.maximize_window()
     try:
         login()
         driver.get("https://www.lightnovel.cn/")
@@ -131,11 +132,12 @@ if __name__ == '__main__':
         baseUrl = lightBookEPUBForum.get_attribute('href')[:-6]
         lightBookEPUBForum.click()
         time.sleep(2)
-
+        print('获取第 1 页信息')
         threadInfo = []
         add_thread_info()
         lastPage = int(
             re.search("([\d]+)", driver.find_element_by_xpath('//*[@id="fd_page_bottom"]/div/a[10]').text).group(0))
+        time.sleep(1)
         for i in range(2, lastPage + 1):
             print('获取第 %s 页信息' % i)
             driver.get(baseUrl + "%s%s" % (i, '.html'))
