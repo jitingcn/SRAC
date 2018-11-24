@@ -15,15 +15,18 @@ from selenium import webdriver
 
 
 def login():
+    print("登录", end=' -> ')
     try:
         cookies = json.loads(getpass.getpass("请黏贴轻国cookies或直接回车跳过(无回显):"))
         if not cookies:
             cookies = None
     except json.decoder.JSONDecodeError:
+        print("无效cookies，使用QQ登录")
+        print("建议：请确保cookies格式为紧凑json(在同一行内)")
         cookies = None
     if not cookies:
         driver.get("https://www.lightnovel.cn/")
-        time.sleep(5)
+        time.sleep(2)
 
         driver.find_element_by_xpath('//*[@id="lsform"]/div/div[2]/p[1]/a').click()
         time.sleep(2)
@@ -35,43 +38,65 @@ def login():
         time.sleep(1)
 
         driver.find_element_by_name("u").clear()
-        driver.find_element_by_name("u").send_keys(str(input("QQ号:")))
+        driver.find_element_by_name("u").send_keys(str(input("请输入QQ号:")))
         driver.find_element_by_name("p").clear()
-        driver.find_element_by_name("p").send_keys(str(getpass.getpass("密码(无回显):")))
+        driver.find_element_by_name("p").send_keys(str(getpass.getpass("请输入密码(无回显):")))
         driver.find_element_by_id("login_button").click()
         time.sleep(4)
-        # login complete
     else:
         driver.get("https://www.lightnovel.cn/")
-        time.sleep(4)
+        time.sleep(3)
         driver.delete_all_cookies()
         for x in cookies:
             driver.add_cookie(x)
-        driver.refresh()
-        time.sleep(2)
+    driver.get("https://www.lightnovel.cn/")
+    time.sleep(2)
+    if not login_check():
+        print('失败')
+        driver.close()
+        exit()
+    else:
+        print('登录成功')
 
 
-def add_thread_info():
-    thread_list = driver.find_elements_by_xpath('//*[contains(@id, "normalthread")]')
-    for x in range(len(thread_list)):
-        thread = thread_list[x].find_element_by_xpath('./tr/th/a[2]')
-        link = str(thread.get_attribute('href'))
-        title = thread.text
-        add = True if link not in [s['link'] for s in threadInfo] or len(threadInfo) == 0 else False
-        if add:
-            threadInfo.append({'title': title, 'link': link})
-
-
-def save_thread_info():
+def login_check():
     try:
-        print("正在保存...", end=' -> ')
-        if threadInfo is not None:
-            with open("lightnovel_epub.json", "w", encoding='utf-8') as f:
-                json.dump(threadInfo, f, sort_keys=True, indent=4, ensure_ascii=False)
-            print('保存完毕')
+        status = driver.find_element_by_xpath('//*[@id="lsform"]/div/div[1]/table/tbody/tr[2]/td[3]/button').text
+    except Exception as err:
+        assert 'Unable to locate element' in str(err)
+        status = driver.find_element_by_xpath('//*[@id="um"]/p[1]/a[5]').text
+        if status == '退出':
+            return True
         else:
-            print('无数据输入')
-    except NameError:
+            print('发生了意外情况')
+            driver.close()
+            exit()
+    if status == '登录':
+        return False
+
+
+def load_data(import_data=None):
+    print("从文件读取现有数据", end=' -> ')
+    if import_data:
+        tmp = import_data
+    else:
+        tmp = []
+    try:
+        with open("lightnovel_epub.json", "r", encoding='utf-8') as f:
+            tmp += json.load(f)
+        print('成功')
+    except FileNotFoundError:
+        print('现有数据不存在，跳过')
+    return tmp
+
+
+def save_data(thread_info):
+    print("写入数据到文件", end=' -> ')
+    if thread_info:
+        with open("lightnovel_epub.json", "w", encoding='utf-8') as f:
+            json.dump(thread_info, f, sort_keys=True, indent=4, ensure_ascii=False)
+        print('成功')
+    else:
         print('无数据输入')
 
 
@@ -117,46 +142,71 @@ def find_code(dl_link_description, dl_link):
     return []
 
 
+def get_thread(thread_info, last_page=None):
+    forum_entrance = driver.find_element_by_xpath('//*[@id="category_3"]/table/tbody/tr[3]/td[2]/p[1]/a[2]')
+    base_url = forum_entrance.get_attribute('href')[:-6]
+    forum_entrance.click()
+    time.sleep(2)
+    if not last_page:
+        last_page = int(
+            re.search("([\d]+)", driver.find_element_by_xpath('//*[@id="fd_page_bottom"]/div/a[10]').text).group(0))
+    elif last_page <= 1:
+        last_page = 1
+    time.sleep(1)
+    for i in range(1, last_page + 1):
+        print('获取第 %s 页信息' % i)
+        driver.get(base_url + "%s%s" % (i, '.html'))
+        time.sleep(1.2)
+        thread_info = add_thread_info(thread_info)
+    return thread_info
+
+
+def add_thread_info(thread_info):
+    thread_list = driver.find_elements_by_xpath('//*[contains(@id, "normalthread")]')
+    for x in range(len(thread_list)):
+        thread = thread_list[x].find_element_by_xpath('./tr/th/a[2]')
+        link = str(thread.get_attribute('href'))
+        title = thread.text
+        add = True if link[:-8] not in [s['link'][:-8] for s in thread_info] or len(thread_info) == 0 else False
+        if add:
+            print("添加", title)
+            if '查水线' in title:
+                print("检查到查水线，跳过")
+                continue
+            thread_info.append({'title': title, 'link': link})
+    return thread_info
+
+
+def get_thread_info():
+    for i in range(len(data)):
+        driver.get(data[i]['link'])
+        time.sleep(0.3)
+        download_info = get_download_info()
+        if len(download_info) == 0:
+            print('暂无资源信息')
+            download_info = 'Unknown'
+        data[i]['download'] = download_info
+
+
 if __name__ == '__main__':
     options = webdriver.ChromeOptions()
-    # options.binary_location = '/Applications/Google Chrome'
-    options.add_argument('headless')
+    # options.binary_location = '/Applications/Google Chrome'  # 指定 chrome 可执行文件位置
+    options.add_argument('headless')  # 无窗口模式
     options.add_argument('log-level=2')
-    # options.add_argument('start-maximized')
+    # options.add_argument('start-maximized')  # 最大化窗口
     driver = webdriver.Chrome(chrome_options=options)
+    # data = []
+    data = load_data()  # 加载初始化数据
     try:
         login()
-        driver.get("https://www.lightnovel.cn/")
-        time.sleep(1)
-        lightBookEPUBForum = driver.find_element_by_xpath('//*[@id="category_3"]/table/tbody/tr[3]/td[2]/p[1]/a[2]')
-        baseUrl = lightBookEPUBForum.get_attribute('href')[:-6]
-        lightBookEPUBForum.click()
-        time.sleep(2)
-        print('获取第 1 页信息')
-        threadInfo = []
-        add_thread_info()
-        lastPage = int(
-            re.search("([\d]+)", driver.find_element_by_xpath('//*[@id="fd_page_bottom"]/div/a[10]').text).group(0))
-        time.sleep(1)
-        for i in range(2, lastPage + 1):
-            print('获取第 %s 页信息' % i)
-            driver.get(baseUrl + "%s%s" % (i, '.html'))
-            time.sleep(1.2)
-            add_thread_info()
-
-        save_thread_info()
         # search link
-        for i in range(len(threadInfo)):
-            driver.get(threadInfo[i]['link'])
-            time.sleep(0.3)
-            download_info = get_download_info()
-            if len(download_info) == 0:
-                download_info = 'Unknown'
-            threadInfo[i]['download'] = download_info
-
-        # save_thread_info()
+        pages = int(input('请输入要获取信息的页数(全部获取请直接回车): ')) or None
+        data = get_thread(data, pages)
+        save_data(data)
+        # get_thread_info()
+        # save_data(data)
     except Exception as e:
         print(e)
     finally:
-        save_thread_info()
+        save_data(data)
         driver.close()
