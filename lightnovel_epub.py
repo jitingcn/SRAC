@@ -13,6 +13,7 @@ import time
 import json
 import getpass
 from selenium import webdriver
+from selenium.common.exceptions import NoSuchElementException
 
 
 def login():
@@ -119,7 +120,7 @@ def load_data(import_data=None):
         timestamp = time.strftime("%Y%m%d%H%M%S", time.localtime())
         with open("lightnovel_epub_%s.json" % timestamp, 'w', encoding='utf-8') as f:
             json.dump(tmp, f, sort_keys=True, indent=4, ensure_ascii=False)
-        print('导入完毕', end=' -> ')
+        print('导入完毕', end=' ->- ')
         tmp_formatted = format_data(tmp)
         return tmp_formatted
     except FileNotFoundError:
@@ -228,8 +229,7 @@ def get_download_info():
                 try:
                     assert "下载次数" in x.find_element_by_xpath('./following-sibling::em[1]').text
                     info.append({'link': x.get_attribute('href'), 'title': x.text})
-                except Exception as err:
-                    assert "NoSuchElementException" in str(err)
+                except NoSuchElementException:
                     pass
         else:
             all_attachment = driver.find_elements_by_xpath('//*[contains(@id, "aid")]')
@@ -238,9 +238,8 @@ def get_download_info():
                     try:
                         if "下载次数" in x.find_element_by_xpath('../following-sibling::p[2]').text and x.text != "":
                             info.append({'link': x.get_attribute('href'), 'title': x.text})
-                    except Exception as err:
-                        if "NoSuchElementException" in str(err):
-                            pass
+                    except NoSuchElementException:
+                        pass
             else:  # TODO 其他网盘获取
                 pass
         return info
@@ -248,22 +247,36 @@ def get_download_info():
 
 if __name__ == '__main__':
     work_dir = os.getcwd()
-    download_dir = '%s\\%s\\' % (work_dir, 'download')
-    if not os.path.exists(download_dir):
-        os.makedirs(download_dir)
+    if os.name == 'nt':
+        download_dir = "{}\{}".format(work_dir, "download")
+        if not os.path.exists(download_dir):
+            print("下载文件夹不存在，创建")
+            os.makedirs(download_dir)
+    else:  # os.name == 'posix'
+        download_dir = "{}/{}".format(work_dir, "download")
+        if not os.path.exists(download_dir):
+            print("下载文件夹不存在，创建")
+            os.makedirs(download_dir)
+
     options = webdriver.ChromeOptions()
-    # options.binary_location = '/Applications/Google Chrome'  # 指定 chrome 可执行文件位置
+
     options.add_argument('--headless')  # 无窗口模式
     options.add_argument('--log-level=2')
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
     # options.add_argument('--start-maximized')  # 最大化窗口
     prefs = {'profile.default_content_settings.popups': 0, 'download.default_directory': download_dir,
              "download.prompt_for_download": False}
     options.add_experimental_option('prefs', prefs)
+
     driver = webdriver.Chrome(chrome_options=options)
+
     driver.command_executor._commands["send_command"] = ("POST", '/session/$sessionId/chromium/send_command')
     params = {'cmd': 'Page.setDownloadBehavior', 'params': {'behavior': 'allow', 'downloadPath': download_dir}}
     command_result = driver.execute("send_command", params)
+
     # data = []
+    time.sleep(40)
     data = load_data()  # 加载初始化数据
     try:
         login()
