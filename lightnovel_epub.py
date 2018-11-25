@@ -205,8 +205,8 @@ def get_thread_info():
 
 def get_download_info():
     all_links = driver.find_elements_by_xpath('//a[contains(@href, "baidu.com/s")]')
+    info = []
     if len(all_links) >= 1:  # 获取百度云分享
-        info = []
         for x in all_links:
             print(driver.title[:-30])
             dl_link = x.get_attribute('href')
@@ -221,8 +221,28 @@ def get_download_info():
                 info.append({'link': dl_link, 'title': dl_text})
         return info
     else:
-        pass  # TODO 论坛附件及其他网盘下载方式
-        return []
+        all_attachment = driver.find_elements_by_xpath('//*[contains(@id, "attach")]/a')
+        if len(all_attachment) >= 1:
+            for x in all_attachment:
+                try:
+                    assert "下载次数" in x.find_element_by_xpath('./following-sibling::em[1]').text
+                    info.append({'link': x.get_attribute('href'), 'title': x.text})
+                except Exception as err:
+                    assert "NoSuchElementException" in str(err)
+                    pass
+        else:
+            all_attachment = driver.find_elements_by_xpath('//*[contains(@id, "aid")]')
+            if len(all_attachment) >= 1:
+                for x in all_attachment:
+                    try:
+                        if "下载次数" in x.find_element_by_xpath('../following-sibling::p[2]').text and x.text != "":
+                            info.append({'link': x.get_attribute('href'), 'title': x.text})
+                    except Exception as err:
+                        if "NoSuchElementException" in str(err):
+                            pass
+            else:  # TODO 其他网盘获取
+                pass
+        return info
 
 
 if __name__ == '__main__':
