@@ -75,6 +75,37 @@ def login_check():
         return False
 
 
+def format_data(import_data):
+    print("格式化数据", end=" -> ")
+    print("排序", end=" -> ")
+    sorted_data = sorted(import_data, key=lambda x: re.findall('(\d{4,8})', x['link'])[-1], reverse=True)
+    formatted_data = []
+    print("去重", end=" -> ")
+    for item in sorted_data:
+        link_id = re.findall('(\d{4,8})', item['link'])[-1]
+        if len(formatted_data) == 0:
+            formatted_data.append(item)
+            continue
+        if link_id != re.findall('(\d{4,8})', formatted_data[-1]['link'])[-1]:
+            formatted_data.append(item)
+        else:
+            # index = [re.findall('(\d{4,8})', s['link'])[-1] for s in formatted_data].index(i)
+            if len(item) > len(formatted_data[-1]):
+                formatted_data.pop()
+                formatted_data.append(item)
+            else:
+                if "download" in formatted_data[-1] and "download" in item:
+                    if isinstance(formatted_data[-1]["download"], str) and isinstance(item["download"], list):
+                        formatted_data.pop()
+                        formatted_data.append(item)
+                    elif isinstance(formatted_data[-1]["download"], list) and isinstance(item["download"], list):
+                        if len(item["download"]) > len(formatted_data[-1]["download"]):
+                            formatted_data.pop()
+                            formatted_data.append(item)
+    print("格式化完毕")
+    return formatted_data
+
+
 def load_data(import_data=None):
     print("从文件读取现有数据", end=' -> ')
     if import_data:
@@ -83,43 +114,28 @@ def load_data(import_data=None):
         tmp = []
     try:
         with open("lightnovel_epub.json", "r", encoding='utf-8') as f:
-            tmp += json.load(f)
-        print('成功')
+            tmp.extend(json.load(f))
+        print('备份文件', end=' -> ')
+        timestamp = time.strftime("%Y%m%d%H%M%S", time.localtime())
+        with open("lightnovel_epub_%s.json" % timestamp, 'w', encoding='utf-8') as f:
+            json.dump(tmp, f, sort_keys=True, indent=4, ensure_ascii=False)
+        tmp_formatted = format_data(tmp)
+        print('导入完毕')
+        return tmp_formatted
     except FileNotFoundError:
         print('现有数据不存在，跳过')
-    return tmp
+        return tmp
 
 
 def save_data(thread_info):
+    thread_info = format_data(thread_info)
     print("写入数据到文件", end=' -> ')
     if thread_info:
         with open("lightnovel_epub.json", "w", encoding='utf-8') as f:
             json.dump(thread_info, f, sort_keys=True, indent=4, ensure_ascii=False)
-        print('成功')
+        print('保存完毕')
     else:
         print('无数据输入')
-
-
-def get_download_info():
-    all_links = driver.find_elements_by_xpath('//a[contains(@href, "baidu.com/s")]')
-    if len(all_links) >= 1:  # 获取百度云分享
-        info = []
-        for x in all_links:
-            print(driver.title[:-30])
-            dl_link = x.get_attribute('href')
-            print('链接: ', dl_link)
-            dl_link_description = x.find_element_by_xpath('..').text \
-                if len(x.find_element_by_xpath('..').text) <= 60 else x.text
-            dl_text = driver.title[:-30] if x.text == dl_link else dl_link_description
-            code = find_code(dl_link_description, dl_link)
-            if code:
-                info.append({'link': dl_link, 'title': dl_text, 'code': code})
-            else:
-                info.append({'link': dl_link, 'title': dl_text})
-        return info
-    else:
-        pass  # TODO 论坛附件及其他网盘下载方式
-        return []
 
 
 def find_code(dl_link_description, dl_link):
@@ -188,6 +204,28 @@ def get_thread_info():
         data[i]['download'] = download_info
 
 
+def get_download_info():
+    all_links = driver.find_elements_by_xpath('//a[contains(@href, "baidu.com/s")]')
+    if len(all_links) >= 1:  # 获取百度云分享
+        info = []
+        for x in all_links:
+            print(driver.title[:-30])
+            dl_link = x.get_attribute('href')
+            print('链接: ', dl_link)
+            dl_link_description = x.find_element_by_xpath('..').text \
+                if len(x.find_element_by_xpath('..').text) <= 60 else x.text
+            dl_text = driver.title[:-30] if x.text == dl_link else dl_link_description
+            code = find_code(dl_link_description, dl_link)
+            if code:
+                info.append({'link': dl_link, 'title': dl_text, 'code': code})
+            else:
+                info.append({'link': dl_link, 'title': dl_text})
+        return info
+    else:
+        pass  # TODO 论坛附件及其他网盘下载方式
+        return []
+
+
 if __name__ == '__main__':
     options = webdriver.ChromeOptions()
     # options.binary_location = '/Applications/Google Chrome'  # 指定 chrome 可执行文件位置
@@ -199,12 +237,13 @@ if __name__ == '__main__':
     data = load_data()  # 加载初始化数据
     try:
         login()
-        # search link
+
         pages = int(input('请输入要获取信息的页数(全部获取请直接回车): ')) or None
         data = get_thread(data, pages)
         save_data(data)
-        # get_thread_info()
-        # save_data(data)
+
+        get_thread_info()
+        save_data(data)
     except Exception as e:
         print(e)
     finally:
