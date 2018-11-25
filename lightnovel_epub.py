@@ -276,7 +276,6 @@ if __name__ == '__main__':
     command_result = driver.execute("send_command", params)
 
     # data = []
-    time.sleep(40)
     data = load_data()  # 加载初始化数据
     try:
         login()
