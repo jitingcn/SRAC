@@ -7,6 +7,7 @@
 # 
 # author = 'JT <jiting@jtcat.com>'
 
+import os
 import re
 import time
 import json
@@ -52,7 +53,7 @@ def login():
     time.sleep(2)
     if not login_check():
         print('失败')
-        driver.close()
+        driver.quit()
         exit()
     else:
         print('登录成功')
@@ -68,7 +69,7 @@ def login_check():
             return True
         else:
             print('发生了意外情况')
-            driver.close()
+            driver.quit()
             exit()
     if status == '登录':
         return False
@@ -246,17 +247,26 @@ def get_download_info():
 
 
 if __name__ == '__main__':
+    work_dir = os.getcwd()
+    download_dir = '%s\\%s\\' % (work_dir, 'download')
+    if not os.path.exists(download_dir):
+        os.makedirs(download_dir)
     options = webdriver.ChromeOptions()
     # options.binary_location = '/Applications/Google Chrome'  # 指定 chrome 可执行文件位置
-    options.add_argument('headless')  # 无窗口模式
-    options.add_argument('log-level=2')
-    # options.add_argument('start-maximized')  # 最大化窗口
+    options.add_argument('--headless')  # 无窗口模式
+    options.add_argument('--log-level=2')
+    # options.add_argument('--start-maximized')  # 最大化窗口
+    prefs = {'profile.default_content_settings.popups': 0, 'download.default_directory': download_dir,
+             "download.prompt_for_download": False}
+    options.add_experimental_option('prefs', prefs)
     driver = webdriver.Chrome(chrome_options=options)
+    driver.command_executor._commands["send_command"] = ("POST", '/session/$sessionId/chromium/send_command')
+    params = {'cmd': 'Page.setDownloadBehavior', 'params': {'behavior': 'allow', 'downloadPath': download_dir}}
+    command_result = driver.execute("send_command", params)
     # data = []
     data = load_data()  # 加载初始化数据
     try:
         login()
-
         pages = int(input('请输入要获取信息的页数(全部获取请直接回车): ')) or None
         data = get_thread(data, pages)
         save_data(data)
@@ -267,4 +277,4 @@ if __name__ == '__main__':
         print(e)
     finally:
         save_data(data)
-        driver.close()
+        driver.quit()
