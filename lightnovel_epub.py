@@ -15,7 +15,6 @@ from selenium import webdriver
 
 
 def login():
-    print("登录", end=' -> ')
     try:
         cookies = json.loads(getpass.getpass("请黏贴轻国cookies或直接回车跳过(无回显):"))
         if not cookies:
@@ -119,8 +118,8 @@ def load_data(import_data=None):
         timestamp = time.strftime("%Y%m%d%H%M%S", time.localtime())
         with open("lightnovel_epub_%s.json" % timestamp, 'w', encoding='utf-8') as f:
             json.dump(tmp, f, sort_keys=True, indent=4, ensure_ascii=False)
+        print('导入完毕', end=' -> ')
         tmp_formatted = format_data(tmp)
-        print('导入完毕')
         return tmp_formatted
     except FileNotFoundError:
         print('现有数据不存在，跳过')
