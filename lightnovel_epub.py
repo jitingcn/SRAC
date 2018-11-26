@@ -144,14 +144,49 @@ def find_code(dl_link_description, dl_link):
     post_massage_list = post_massage.text.split("\n")
     for y in post_massage_list:
         if dl_link_description in y:
-            code = re.findall("(?!epub)(?!\d+MB)([a-zA-Z0-9]{4})", y)
+            code = re.findall("(?!epub)(?!\d+MB)(?!big5)([a-zA-Z0-9]{4})", y)
             if len(code) == 0:
+                print("未找到提取码，扩大搜索范围", end=" -> ")
+                index = post_massage_list.index(y)
+                for z in range(index-1, index+2):
+                    try:
+                        code = re.findall("(?!epub)(?!\d+MB)(?!big5)([a-zA-Z0-9]{4})", post_massage_list[z])
+                    except IndexError:
+                        continue
+                    if len(code) != 0:
+                        code = code[-1]
+                        if code in dl_link:
+                            print("未找到提取码")
+                            return []
+                        if code.isnumeric():
+                            print('似乎没有提取码', code)
+                            return []
+                        if code != "howf":
+                            print('提取码: ', code)
+                            return code
                 print("未找到提取码")
                 return []
             else:
                 code = code[-1]
                 if code in dl_link:
-                    print('似乎没有提取码', code)
+                    print('似乎没有提取码', code, "扩大搜索范围", end=" -> ")
+                    try:
+                        code = re.findall("(?!epub)(?!\d+MB)(?!big5)([a-zA-Z0-9]{4})",
+                                          post_massage_list[post_massage_list.index(y)+1])
+                    except IndexError:
+                        code = []
+                    if len(code) != 0:
+                        code = code[-1]
+                        if code in dl_link:
+                            print("未找到提取码")
+                            return []
+                        if code.isnumeric():
+                            print('似乎没有提取码', code)
+                            return []
+                        if code != "howf":
+                            print('提取码: ', code)
+                            return code
+                    print("未找到提取码")
                     return []
                 else:
                     print('提取码: ', code)
@@ -184,7 +219,7 @@ def add_thread_info(thread_info):
         thread = thread_list[x].find_element_by_xpath('./tr/th/a[2]')
         link = str(thread.get_attribute('href'))
         title = thread.text
-        add = True if link[:-8] not in [s['link'][:-8] for s in thread_info] or len(thread_info) == 0 else False
+        add = True if link[32:-8] not in [s['link'][32:-8] for s in thread_info] or len(thread_info) == 0 else False
         if add:
             print("添加", title)
             if '查水线' in title:
@@ -196,13 +231,35 @@ def add_thread_info(thread_info):
 
 def get_thread_info():
     for i in range(len(data)):
-        driver.get(data[i]['link'])
-        time.sleep(0.3)
-        download_info = get_download_info()
-        if len(download_info) == 0:
-            print('暂无资源信息')
-            download_info = 'Unknown'
-        data[i]['download'] = download_info
+        """
+            0: Need to be processed 
+            1: Need to get code
+            2: Processed
+        """
+        status = 0
+        if "download" not in data[i]:
+            status = 0
+        else:
+            if data[i]["download"] == "Unknown":
+                status = 0
+            else:
+                if len(data[i]["download"]) >= 1:
+                    for z in data[i]["download"]:
+                        if 'baidu.com' in z["link"] and "code" not in z:
+                            status = 1
+                            break
+                        if "code" in z:
+                            status = 2
+        if status == 0 or status == 1:
+            driver.get(data[i]['link'])
+            time.sleep(0.3)
+            download_info = get_download_info()
+            if len(download_info) == 0:
+                print('暂无资源: ', data[i]['title'])
+                download_info = 'Unknown'
+            data[i]['download'] = download_info
+        else:
+            print("跳过: ", data[i]["title"])
 
 
 def get_download_info():
@@ -279,7 +336,7 @@ if __name__ == '__main__':
     data = load_data()  # 加载初始化数据
     try:
         login()
-        pages = int(input('请输入要获取信息的页数(全部获取请直接回车): ')) or None
+        pages = int(input('请输入要获取信息的页数(全部获取请直接回车): ') or 0) or None
         data = get_thread(data, pages)
         save_data(data)
 
