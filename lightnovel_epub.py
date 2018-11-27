@@ -16,7 +16,158 @@ from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 
 
-def login():
+def baidu_login():
+    try:
+        cookies = json.loads(getpass.getpass("请黏贴百度云cookies或直接回车跳过(无回显):"))
+        if not cookies:
+            cookies = None
+    except json.decoder.JSONDecodeError:
+        print("建议：请确保cookies格式为紧凑json(在同一行内)")
+        print("无效cookies，使用账号登录方式")
+        cookies = None
+    if not cookies:
+        url = 'https://pan.baidu.com/'
+        driver.get(url)
+        print('开始登录百度网盘')
+        time.sleep(8)
+        chg_field = driver.find_element_by_id('TANGRAM__PSP_4__footerULoginBtn')
+        chg_field.click()
+
+        name_field = driver.find_element_by_id('TANGRAM__PSP_4__userName')
+        passwd_field = driver.find_element_by_id('TANGRAM__PSP_4__password')
+        login_button = driver.find_element_by_id('TANGRAM__PSP_4__submit')
+        error_field = driver.find_element_by_id("TANGRAM__PSP_4__error")
+
+        name_field.send_keys(str(input("请输入手机/邮箱/用户名:")))
+        passwd_field.send_keys(str(getpass.getpass("请输入密码(无回显):")))
+        login_button.click()
+        time.sleep(2)
+        if "登录失败" in error_field.text:
+            '''
+            print("暂时无法登录，程序退出")
+            driver.quit()
+            exit(1)
+            '''
+            print("登录失败，可能需要邮箱/手机验证(暂仅支持手机验证)")
+            time.sleep(2)
+            get_code_button = driver.find_element_by_id('TANGRAM__37__button_send_mobile')
+            code_field = driver.find_element_by_id('TANGRAM__37__input_vcode')
+            code_submit_button = driver.find_element_by_id('TANGRAM__37__button_submit')
+            get_code_button.click()
+            print("验证码已发送")
+            time.sleep(3)
+            code = input("请输入手机验证码:\n")
+            code_field.send_keys(code)
+            code_submit_button.click()
+            time.sleep(3)
+        elif '用户名或密码有误' in error_field.text:
+            print("用户名或密码有误，使用短信登录")
+            sms_login_button = driver.find_element_by_id('TANGRAM__PSP_4__smsSwitchWrapper')
+            sms_login_button.click()
+            phone_number_field = driver.find_element_by_id('TANGRAM__PSP_4__userName')
+            phone_number_field.send_keys(str(input("请输入手机号:")))
+            time.sleep(0.2)
+            driver.find_element_by_id('TANGRAM__PSP_4__smsTimer').click()
+            time.sleep(1)
+            sms_error_field = driver.find_element_by_id('TANGRAM__PSP_4__smsError')
+            while sms_error_field.text == '手机号码格式不正确':
+                print('输入的手机号码有误')
+                phone_number_field.send_keys(str(input("请输入手机号:")))
+                time.sleep(0.2)
+                driver.find_element_by_id('TANGRAM__PSP_4__smsTimer').click()
+                time.sleep(1)
+            sms_code_field = driver.find_element_by_id('TANGRAM__PSP_4__smsVerifyCode')
+            sms_code_field.send_keys(str(input("请输入获取到的验证码:")))
+            time.sleep(0.2)
+            sms_login_button = driver.find_element_by_id('TANGRAM__PSP_4__smsSubmit')
+            sms_login_button.click()
+            time.sleep(1)
+            if sms_error_field == '动态密码错误':
+                print("验证码错误，请重新输入")
+                sms_code_field.send_keys(str(input("请输入获取到的验证码:")))
+                time.sleep(0.2)
+                sms_login_button = driver.find_element_by_id('TANGRAM__PSP_4__smsSubmit')
+                sms_login_button.click()
+                time.sleep(1)
+            time.sleep(2)
+
+        ''' 旧的代码段
+        try:
+            driver.find_element_by_id('TANGRAM__37__button_send_mobile')
+            get_code_button = driver.find_element_by_id('TANGRAM__37__button_send_mobile')
+            code_field = driver.find_element_by_id('TANGRAM__37__input_vcode')
+            code_submit_button = driver.find_element_by_id('TANGRAM__37__button_submit')
+
+            get_code_button.click()
+            code = input("输入手机验证码:\n")
+            code_field.send_keys(code)
+            code_submit_button.click()
+            time.sleep(3)
+        except Exception as e:
+            print('不需要手机登录验证或验证错误', e)
+        return driver.get_cookies()
+        '''
+
+    else:
+        driver.get("https://pan.baidu.com/")
+        time.sleep(3)
+        # driver.delete_all_cookies()
+        for x in cookies:
+            driver.add_cookie(x)
+        driver.refresh()
+        time.sleep(3)
+    if driver.title == "百度网盘-全部文件":
+        baidu_prepare()
+    else:
+        print("登录失败，退出进程")
+        driver.quit()
+        exit(1)
+
+
+def baidu_prepare():
+    print("开始初始化转存，请等待...")
+    time.sleep(3)
+    try:
+        driver.find_element_by_xpath('//*[@id="dialog1"]/div[1]/div/span').click()
+        print("跳过几把公告")
+        time.sleep(1)
+    except NoSuchElementException:
+        pass
+    button = driver.find_elements_by_class_name('g-button')
+    for x in button:
+        if x.get_attribute('title') == "新建文件夹":
+            x.click()
+            time.sleep(0.5)
+            break
+    named_new_folder_field = driver.find_element_by_class_name("GadHyA")
+    submit_button = driver.find_element_by_class_name('amppO4EQ')
+    named_new_folder_field.send_keys(timestamp)
+    submit_button.click()
+
+    test_link = 'https://pan.baidu.com/s/1sj0iBLF'
+    driver.get(test_link)
+    time.sleep(1)
+    save_button = driver.find_element_by_xpath('//*[@id="layoutMain"]/div[1]/div[1]/div/div[2]/div/div/div[2]/a[1]')
+    save_button.click()
+    time.sleep(6)
+    file_tree = driver.find_elements_by_xpath('//*[@id="fileTreeDialog"]/div[2]/div/ul/li/ul/li')  # [x]/div/span/span
+    for x in file_tree:
+        if x.find_element_by_xpath('./div/span/span').text == timestamp:
+            x.click()
+            break
+    driver.find_element_by_class_name('g-button-blue-large').click()
+    time.sleep(1)
+    save_button.click()
+    time.sleep(1)
+    save_path_item = driver.find_element_by_class_name('save-path-item')
+    if "最近保存路径" in save_path_item.text and timestamp in save_path_item.text:
+        driver.find_element_by_class_name('save-chk-io').click()
+        driver.find_element_by_class_name('g-button-blue-large').click()
+    time.sleep(1)
+    print("度盘转存初始化完毕")
+
+
+def lightnovel_login():
     try:
         cookies = json.loads(getpass.getpass("请黏贴轻国cookies或直接回车跳过(无回显):"))
         if not cookies:
@@ -47,7 +198,7 @@ def login():
     else:
         driver.get("https://www.lightnovel.cn/")
         time.sleep(3)
-        driver.delete_all_cookies()
+        # driver.delete_all_cookies()
         for x in cookies:
             driver.add_cookie(x)
     driver.get("https://www.lightnovel.cn/")
@@ -55,7 +206,7 @@ def login():
     if not login_check():
         print('失败')
         driver.quit()
-        exit()
+        exit(1)
     else:
         print('登录成功')
 
@@ -117,7 +268,6 @@ def load_data(import_data=None):
         with open("lightnovel_epub.json", "r", encoding='utf-8') as f:
             tmp.extend(json.load(f))
         print('备份文件', end=' -> ')
-        timestamp = time.strftime("%Y%m%d%H%M%S", time.localtime())
         with open("lightnovel_epub_%s.json" % timestamp, 'w', encoding='utf-8') as f:
             json.dump(tmp, f, sort_keys=True, indent=4, ensure_ascii=False)
         print('导入完毕', end=' ->- ')
@@ -303,6 +453,7 @@ def get_download_info():
 
 
 if __name__ == '__main__':
+    timestamp = time.strftime("%Y%m%d%H%M%S", time.localtime())
     work_dir = os.getcwd()
     if os.name == 'nt':
         download_dir = "{}\{}".format(work_dir, "download")
@@ -318,10 +469,10 @@ if __name__ == '__main__':
     options = webdriver.ChromeOptions()
 
     options.add_argument('--headless')  # 无窗口模式
-    options.add_argument('--log-level=2')
+    options.add_argument('--start-maximized')  # 最大化窗口
+    options.add_argument('--log-level=3')
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    # options.add_argument('--start-maximized')  # 最大化窗口
     prefs = {'profile.default_content_settings.popups': 0, 'download.default_directory': download_dir,
              "download.prompt_for_download": False}
     options.add_experimental_option('prefs', prefs)
@@ -333,9 +484,13 @@ if __name__ == '__main__':
     command_result = driver.execute("send_command", params)
 
     # data = []
+    baidu_login()
+    time.sleep(1)
+    print("度盘转存测试完毕，退出")
+    exit()
     data = load_data()  # 加载初始化数据
     try:
-        login()
+        lightnovel_login()
         pages = int(input('请输入要获取信息的页数(全部获取请直接回车): ') or 0) or None
         data = get_thread(data, pages)
         save_data(data)
