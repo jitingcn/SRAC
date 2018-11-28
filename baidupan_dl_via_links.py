@@ -114,4 +114,4 @@ if __name__ == '__main__':
         time.sleep(60)
         driver.close()
     except Exception as err:
-        print('主程序错误:', err)
+        print('Error:', err)

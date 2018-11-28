@@ -12,8 +12,7 @@ RUN wget -O /tmp/chromedriver.zip http://chromedriver.storage.googleapis.com/`cu
 RUN unzip /tmp/chromedriver.zip chromedriver -d /usr/local/bin/
 
 ENV DISPLAY=:99
+ENV LANG C.UTF-8
 
-COPY requirements.txt /tmp
-
-RUN pip install --no-cache-dir -r /tmp/requirements.txt
+RUN pip install --no-cache-dir selenium==3.8.0 requests lxml
 RUN rm /tmp/*

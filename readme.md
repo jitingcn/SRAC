@@ -12,3 +12,5 @@ If you face error when build dockerfile:
 ```dpkg: error: error creating new backup file '/var/lib/dpkg/status-old': Invalid cross-device link```
 
 Run `echo N | tee /sys/module/overlay/parameters/metacopy` in host.
+
+`bash -c "cd /usr/workspace && ./lightnovel_epub.py"`
