@@ -13,7 +13,11 @@ import time
 import json
 import getpass
 from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions
 from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import TimeoutException
 
 
 def baidu_login():
@@ -28,7 +32,7 @@ def baidu_login():
         url = 'https://pan.baidu.com/'
         driver.get(url)
         print('Start logging in to BaiduNetDisk.')
-        time.sleep(7)
+        # time.sleep(7)
         chg_field = driver.find_element_by_id('TANGRAM__PSP_4__footerULoginBtn')
         chg_field.click()
 
@@ -40,7 +44,7 @@ def baidu_login():
         name_field.send_keys(str(input("Please enter your phone, email or username:")))
         passwd_field.send_keys(str(getpass.getpass("Please enter your password (no echo):")))
         login_button.click()
-        time.sleep(10)
+        # time.sleep(10)
         if "验证码" in error_field.text:
             print("需要验证码")
             exit()
@@ -51,55 +55,58 @@ def baidu_login():
             exit(1)
             '''
             print("Login failed, may require email/phone verification.")
-            time.sleep(2)
+            # time.sleep(2)
             get_code_button = driver.find_element_by_id('TANGRAM__37__button_send_mobile')
             code_field = driver.find_element_by_id('TANGRAM__37__input_vcode')
             code_submit_button = driver.find_element_by_id('TANGRAM__37__button_submit')
             get_code_button.click()
             print("Verification code has been sent.")
-            time.sleep(3)
+            # time.sleep(3)
             code_field.send_keys(str(input("Please enter verification code:\n")))
             code_submit_button.click()
-            time.sleep(3)
+            # time.sleep(3)
         elif '用户名或密码有误' in error_field.text:
             print("Username or password is incorrect. Sign in with SMS instead.")
             sms_login_button = driver.find_element_by_id('TANGRAM__PSP_4__smsSwitchWrapper')
             sms_login_button.click()
             phone_number_field = driver.find_element_by_id('TANGRAM__PSP_4__userName')
             phone_number_field.send_keys(str(input("Please enter your phone number:")))
-            time.sleep(0.2)
+            # time.sleep(0.2)
             driver.find_element_by_id('TANGRAM__PSP_4__smsTimer').click()
-            time.sleep(1)
+            # time.sleep(1)
             sms_error_field = driver.find_element_by_id('TANGRAM__PSP_4__smsError')
             while sms_error_field.text == '手机号码格式不正确':
                 print('The phone number you entered is incorrect.')
                 phone_number_field.send_keys(str(input("Please enter your phone number:")))
-                time.sleep(0.2)
+                # time.sleep(0.2)
                 driver.find_element_by_id('TANGRAM__PSP_4__smsTimer').click()
-                time.sleep(1)
+                # time.sleep(1)
             sms_code_field = driver.find_element_by_id('TANGRAM__PSP_4__smsVerifyCode')
             sms_code_field.send_keys(str(input("Please enter verification code:")))
-            time.sleep(0.2)
+            # time.sleep(0.2)
             sms_login_button = driver.find_element_by_id('TANGRAM__PSP_4__smsSubmit')
             sms_login_button.click()
-            time.sleep(1)
+            # time.sleep(1)
             while sms_error_field == '动态密码错误':
                 sms_code_field.send_keys(str(input("The verification code is incorrect, please re-enter:")))
-                time.sleep(0.2)
+                # time.sleep(0.2)
                 sms_login_button = driver.find_element_by_id('TANGRAM__PSP_4__smsSubmit')
                 sms_login_button.click()
-                time.sleep(1)
-            time.sleep(2)
+                # time.sleep(1)
+            # time.sleep(2)
 
     else:
-        driver.get("https://pan.baidu.com/")
-        time.sleep(3)
-        # driver.delete_all_cookies()
+        driver.get("https://eyun.baidu.com/")
         for x in cookies:
             driver.add_cookie(x)
         driver.refresh()
-        time.sleep(3)
-    time.sleep(1)
+        driver.get("https://pan.baidu.com/")
+        time.sleep(1)
+        for x in cookies:
+            driver.add_cookie(x)
+        driver.refresh()
+        time.sleep(2)
+    # time.sleep(1)
     if driver.title == "百度网盘-全部文件":
         print("Login successful.")
         baidu_prepare()
@@ -111,46 +118,128 @@ def baidu_login():
 
 def baidu_prepare():
     print("Start initialization...")
-    time.sleep(3)
+    # time.sleep(3)
     try:
         driver.find_element_by_xpath('//*[@id="dialog1"]/div[1]/div/span').click()
         print("Skip the announcement.")
-        time.sleep(1)
+        # time.sleep(1)
     except NoSuchElementException:
         pass
-    button = driver.find_elements_by_class_name('g-button')
+    button = driver.find_elements_by_css_selector('em.icon.icon-newfolder')
     for x in button:
         if x.get_attribute('title') == "新建文件夹":
             x.click()
             time.sleep(0.5)
             break
     named_new_folder_field = driver.find_element_by_class_name("GadHyA")
-    submit_button = driver.find_element_by_class_name('amppO4EQ')
+    submit_button = driver.find_element_by_css_selector('em.icon.umogj0D')
     named_new_folder_field.send_keys(timestamp)
     print("A project folder named %s has been created." % timestamp)
     submit_button.click()
-
+    '''
     test_link = 'https://pan.baidu.com/s/1sj0iBLF'
     driver.get(test_link)
-    time.sleep(1)
+    # time.sleep(1)
     save_button = driver.find_element_by_xpath('//*[@id="layoutMain"]/div[1]/div[1]/div/div[2]/div/div/div[2]/a[1]')
     save_button.click()
-    time.sleep(6)
+    # time.sleep(6)
     file_tree = driver.find_elements_by_xpath('//*[@id="fileTreeDialog"]/div[2]/div/ul/li/ul/li')  # [x]/div/span/span
     for x in file_tree:
         if x.find_element_by_xpath('./div/span/span').text == timestamp:
             x.click()
             break
     driver.find_element_by_class_name('g-button-blue-large').click()
-    time.sleep(1)
+    # time.sleep(1)
     save_button.click()
-    time.sleep(1)
+    # time.sleep(1)
     save_path_item = driver.find_element_by_class_name('save-path-item')
     if "最近保存路径" in save_path_item.text and timestamp in save_path_item.text:
         driver.find_element_by_class_name('save-chk-io').click()
         driver.find_element_by_class_name('g-button-blue-large').click()
-    time.sleep(1)
+    # time.sleep(1)
+    '''
     print("Initialization completed.")
+
+
+def pan_save(link, code=None):
+    driver.get(link)
+    time.sleep(1)
+    if "不存在" in driver.title:
+        print("链接已失效")
+        return False
+    if "输入提取码" in driver.title:
+        if code:
+            try:
+                code_field = WebDriverWait(driver, 2) \
+                    .until(expected_conditions.visibility_of_element_located((By.ID, "hgejgNaM")))
+                submit_button = WebDriverWait(driver, 3) \
+                    .until(expected_conditions.visibility_of_element_located((By.CSS_SELECTOR, "span.text")))
+                code_field.send_keys(code)
+                submit_button.click()
+            except TimeoutException:
+                print("元素超时")
+                return False
+        else:
+            print("没有提取码")
+            return False
+    if WebDriverWait(driver, 3).until(expected_conditions.title_contains("免费高速下载")):
+        try:
+            select_all_button = WebDriverWait(driver, 1.5).until(expected_conditions.visibility_of_element_located(
+                (By.XPATH, '//*[@id="shareqr"]/div[2]/div[2]/div/ul[1]/li[1]/div/span[1]')))
+            select_all_button.click()
+            save_button = driver.find_element_by_xpath(
+                '//*[@id="bd-main"]/div/div[1]/div/div[2]/div/div/div[2]/a[1]')
+            save_button.click()
+        except TimeoutException:
+            save_button = driver.find_element_by_xpath(
+                '//*[@id="layoutMain"]/div[1]/div[1]/div/div[2]/div/div/div[2]/a[1]')
+            save_button.click()
+        save_path_item = driver.find_element_by_class_name('save-path-item')
+        if "最近保存路径" in save_path_item.text and timestamp in save_path_item.text:
+            driver.find_element_by_class_name('save-chk-io').click()
+        else:
+            file_tree = driver.find_elements_by_xpath(
+                '//*[@id="fileTreeDialog"]/div[2]/div/ul/li/ul/li')  # [x]/div/span/span
+            for x in file_tree:
+                if x.find_element_by_xpath('./div/span/span').text == timestamp:
+                    x.click()
+                    break
+        driver.find_element_by_class_name('g-button-blue-large').click()
+        return True
+    return False
+
+
+def eyun_save(link, code=None):
+    try:
+        driver.get(link)
+        time.sleep(1)
+        if code:
+            try:
+                code_field = WebDriverWait(driver, 2) \
+                    .until(expected_conditions.visibility_of_element_located((By.CLASS_NAME, "share-access-code")))
+                submit_button = WebDriverWait(driver, 3) \
+                    .until(expected_conditions.visibility_of_element_located((By.CSS_SELECTOR, "span.text")))
+                code_field.send_keys(code)
+                submit_button.click()
+            except TimeoutException:
+                print("元素超时")
+                return False
+        else:
+            pass
+            # print("没有提取码")
+            # return False
+        save_button = driver.find_element_by_xpath('//*[@id="layoutMain"]/div[1]/div[2]/div/div[2]/a[1]')
+        save_button.click()
+        file_tree = driver.find_elements_by_xpath('//*[@id="fileTreeDialog"]/div[2]/div/ul/li/ul/li')  # [x]/div/span/span
+        for x in file_tree:
+            if x.find_element_by_xpath('./div/span/span').text == timestamp:
+                x.click()
+                break
+        driver.find_element_by_class_name('g-button-blue-large').click()
+        return True
+    except Exception as err:
+        print(err)
+        return False
 
 
 def lightnovel_login():
@@ -163,31 +252,31 @@ def lightnovel_login():
         cookies = None
     if not cookies:
         driver.get("https://www.lightnovel.cn/")
-        time.sleep(2)
+        # time.sleep(2)
 
         driver.find_element_by_xpath('//*[@id="lsform"]/div/div[2]/p[1]/a').click()
-        time.sleep(2)
+        # time.sleep(2)
 
         driver.switch_to.frame("ptlogin_iframe")
         driver.execute_script('document.getElementById("qlogin").style="display: none;"')
         driver.execute_script('document.getElementsByClassName("authLogin").style="display: none;"')
         driver.execute_script('document.getElementById("web_qr_login").style="display: block;"')
-        time.sleep(1)
+        # time.sleep(1)
 
         driver.find_element_by_name("u").clear()
         driver.find_element_by_name("u").send_keys(str(input("请输入QQ号:")))
         driver.find_element_by_name("p").clear()
         driver.find_element_by_name("p").send_keys(str(getpass.getpass("请输入密码(无回显):")))
         driver.find_element_by_id("login_button").click()
-        time.sleep(4)
+        # time.sleep(4)
     else:
         driver.get("https://www.lightnovel.cn/")
-        time.sleep(3)
+        # time.sleep(3)
         # driver.delete_all_cookies()
         for x in cookies:
             driver.add_cookie(x)
     driver.get("https://www.lightnovel.cn/")
-    time.sleep(2)
+    # time.sleep(2)
     if not login_check():
         print('登录失败')
         driver.quit()
@@ -286,7 +375,7 @@ def find_code(dl_link_description, dl_link):
             if len(code) == 0:
                 print("未找到提取码，扩大搜索范围", end=" -> ")
                 index = post_massage_list.index(y)
-                for z in range(index-1, index+2):
+                for z in range(index - 1, index + 2):
                     try:
                         code = re.findall("(?!epub)(?!\d+MB)(?!big5)([a-zA-Z0-9]{4})", post_massage_list[z])
                     except IndexError:
@@ -310,7 +399,7 @@ def find_code(dl_link_description, dl_link):
                     print('似乎没有提取码', code, "扩大搜索范围", end=" -> ")
                     try:
                         code = re.findall("(?!epub)(?!\d+MB)(?!big5)([a-zA-Z0-9]{4})",
-                                          post_massage_list[post_massage_list.index(y)+1])
+                                          post_massage_list[post_massage_list.index(y) + 1])
                     except IndexError:
                         code = []
                     if len(code) != 0:
@@ -330,6 +419,42 @@ def find_code(dl_link_description, dl_link):
                     print('提取码: ', code)
                     return code
     return []
+
+
+def verify_baidu_pan_link(link, code=None):
+    try:
+        driver.get(link)
+        time.sleep(2)
+        if "链接不存在" in driver.title:
+            print("链接不存在")
+            return 'expired'
+        elif "页面不存在" in driver.title:
+            print("页面不存在")
+            return 'expired'
+        elif "免费高速下载" in driver.title:
+            if code is None:
+                print('OK')
+                return 'verified'
+            else:
+                print("不需要提取码")
+                return 'no code'
+        elif "请输入提取码" in driver.title:
+            if code is None:
+                return 'need code'
+            else:
+                time.sleep(2)
+                driver.find_element_by_id('jgddmad').send_keys(code)
+                submit = driver.find_element_by_css_selector('span.text')
+                submit.click()
+                time.sleep(2)
+                if "免费高速下载" in driver.title:
+                    return 'verified'
+                else:
+                    return 'unconfirmed'
+        return 'unconfirmed'
+    except Exception as err:
+        print(err)
+        return 'unconfirmed'
 
 
 def get_thread(thread_info, last_page=None):
@@ -379,9 +504,10 @@ def get_thread_info():
         # if i == 50:
         #    break
 
-        status = 0
+        status = 2
         if "download" not in data[i]:
             status = 0
+        '''
         else:
             if data[i]["download"] == "Unknown":
                 status = 0
@@ -393,13 +519,32 @@ def get_thread_info():
                             break
                         if "code" in z:
                             status = 2
+        '''
         if status == 0 or status == 1:
             driver.get(data[i]['link'])
-            time.sleep(0.3)
+            time.sleep(0.5)
             download_info = get_download_info()
             if len(download_info) == 0:
                 print('暂无资源: ', data[i]['title'])
                 download_info = 'Unknown'
+            else:
+                for x in download_info:
+                    if "pan.baidu.com" in x["link"]:
+                        if "code" in x:
+                            result = verify_baidu_pan_link(x["link"], x["code"])
+                        else:
+                            result = verify_baidu_pan_link(x["link"])
+                        if result == 'expired':
+                            x["status"] = 'expired'
+                        elif result == 'verified':
+                            x["status"] = 'verified'
+                        elif result == 'need code':
+                            x["status"] = 'need code'
+                        elif result == 'no code':
+                            x["status"] = 'verified'
+                            x.pop('code')
+                        elif result == 'unconfirmed':
+                            x["status"] = 'unconfirmed'
             data[i]['download'] = download_info
         else:
             print("跳过: ", data[i]["title"])
@@ -430,6 +575,7 @@ def get_download_info():
                     assert "下载次数" in x.find_element_by_xpath('./following-sibling::em[1]').text
                     info.append({'link': x.get_attribute('href'), 'title': x.text})
                 except NoSuchElementException:
+                    # driver.save_screenshot("error-%s.png" % time.strftime("%Y%m%d%H%M%S", time.localtime()))
                     pass
         else:
             all_attachment = driver.find_elements_by_xpath('//*[contains(@id, "aid")]')
@@ -439,10 +585,62 @@ def get_download_info():
                         if "下载次数" in x.find_element_by_xpath('../following-sibling::p[2]').text and x.text != "":
                             info.append({'link': x.get_attribute('href'), 'title': x.text})
                     except NoSuchElementException:
+                        # driver.save_screenshot("error-%s.png" % time.strftime("%Y%m%d%H%M%S", time.localtime()))
                         pass
             else:  # TODO 其他网盘获取
                 pass
         return info
+
+
+def save_process(db):
+
+    def logger(level, *massage):
+        log_timestamp = time.strftime("[%Y-%m-%d %H:%M:%S]", time.localtime())
+        with open("log-%s-save.txt" % timestamp, "a", encoding="utf-8") as f:
+            f.write("%s: %s %s\n" % (log_timestamp, level, " ".join(massage)))
+
+    for i in db:
+        try:
+            if isinstance(i["download"], list):
+                for x in i["download"]:
+                    try:
+                        status = False
+                        if "status" in x:
+                            if x["status"] == 'expired':
+                                status = False
+                                logger("资源链接失效", i["title"], i["link"], x["title"], x["link"])
+                        elif "eyun.baidu.com" in x["link"]:
+                            if "code" in x:
+                                status = eyun_save(x["link"], x["code"])
+                            else:
+                                status = eyun_save(x["link"])
+                        elif "pan.baidu.com" in x["link"]:
+                            if "code" in x:
+                                status = pan_save(x["link"], x["code"])
+                            else:
+                                status = pan_save(x["link"])
+                        elif "attachment" in x["link"]:
+                            status = True
+                        if not status:
+                            logger("保存失败", i["title"], i["link"], x["title"], x["link"])
+                    except NoSuchElementException as err:
+                        error_timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                        driver.save_screenshot("SaveError-%s.png" % error_timestamp)
+                        logger("找不到元素", str(err))
+                    except TimeoutException as err:
+                        error_timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                        driver.save_screenshot("SaveError-%s.png" % error_timestamp)
+                        logger("程序超时", str(err))
+                    except Exception as err:
+                        error_timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                        driver.save_screenshot("SaveError-%s.png" % error_timestamp)
+                        logger("程序错误", str(err))
+            else:
+                logger("无资源信息", i["title"], i["link"])
+        except Exception as err:
+            error_timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+            driver.save_screenshot("SaveError-%s.png" % error_timestamp)
+            logger("程序错误", str(err))
 
 
 if __name__ == '__main__':
@@ -462,7 +660,6 @@ if __name__ == '__main__':
     options = webdriver.ChromeOptions()
 
     options.add_argument('--headless')  # 无窗口模式
-    options.add_argument('--start-maximized')  # 最大化窗口
     options.add_argument('--log-level=3')
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
@@ -471,24 +668,29 @@ if __name__ == '__main__':
     options.add_experimental_option('prefs', prefs)
 
     driver = webdriver.Chrome(options=options)
+    driver.set_window_size(1920, 1080)
+    driver.implicitly_wait(15)
 
     driver.command_executor._commands["send_command"] = ("POST", '/session/$sessionId/chromium/send_command')
     params = {'cmd': 'Page.setDownloadBehavior', 'params': {'behavior': 'allow', 'downloadPath': download_dir}}
     command_result = driver.execute("send_command", params)
 
     # data = []
-    # baidu_login()
-    # print("BaiduNetDisk Initialization test completed.")
-
+    baidu_login()
+    lightnovel_login()
     data = load_data()  # 加载初始化数据
     try:
-        lightnovel_login()
+        pass
         pages = int(input('请输入要获取信息的页数(全部获取请直接回车): ') or 0) or None
         data = get_thread(data, pages)
         save_data(data)
 
         get_thread_info()
         save_data(data)
+
+        save_process(data)
+    except NoSuchElementException:
+        driver.save_screenshot("error-%s.png" % time.strftime("%Y%m%d%H%M%S", time.localtime()))
     except Exception as e:
         print(e)
     finally:
