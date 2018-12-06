@@ -163,6 +163,7 @@ def baidu_prepare():
 
 def pan_save(link, code=None):
     driver.get(link)
+    time.sleep(1)
     if "不存在" in driver.title:
         print("链接已失效")
         return False
@@ -182,32 +183,34 @@ def pan_save(link, code=None):
         else:
             print("没有提取码")
             return False
-    if WebDriverWait(driver, 10).until(expected_conditions.title_contains("免费")):
-        time.sleep(1)
+    if WebDriverWait(driver, 7).until(expected_conditions.title_contains("免费")):
         try:
-            select_all_button = WebDriverWait(driver, 1.5).until(expected_conditions.visibility_of_element_located(
+            select_all_button = WebDriverWait(driver, 2).until(expected_conditions.visibility_of_element_located(
                 (By.XPATH, '//*[@id="shareqr"]/div[2]/div[2]/div/ul[1]/li[1]/div/span[1]')))
             select_all_button.click()
             save_button = driver.find_element_by_xpath(
                 '//*[@id="bd-main"]/div/div[1]/div/div[2]/div/div/div[2]/a[1]')
             save_button.click()
         except TimeoutException:
-            save_button = WebDriverWait(driver, 2).until(expected_conditions.visibility_of_element_located(
+            save_button = WebDriverWait(driver, 3).until(expected_conditions.element_to_be_clickable(
                 (By.XPATH, '//*[@id="layoutMain"]/div[1]/div[1]/div/div[2]/div/div/div[2]/a[1]')))
             save_button.click()
         time.sleep(1)
-        save_path_item = driver.find_element_by_class_name('save-path-item')
-        if "最近保存路径" in save_path_item.text and timestamp in save_path_item.text:
-            driver.find_element_by_class_name('save-chk-io').click()
-        else:
-            file_tree = WebDriverWait(driver, 3).until(expected_conditions.visibility_of_element_located(
-                (By.XPATH, '//*[@id="fileTreeDialog"]/div[2]/div/ul/li/ul/li')))  # [x]/div/span/span
+        try:
+            save_path_item = driver.find_element_by_class_name('save-path-item')
+            if "最近保存路径" in save_path_item.text and timestamp in save_path_item.text:
+                driver.find_element_by_class_name('save-chk-io').click()
+        except NoSuchElementException:
+            file_tree = driver.find_elements_by_xpath('//*[@id="fileTreeDialog"]/div[2]/div/ul/li/ul/li')
             for y in file_tree:
                 if y.find_element_by_xpath('./div/span/span').text == timestamp:
                     y.click()
                     break
-        driver.find_element_by_class_name('g-button-blue-large').click()
+        # driver.find_element_by_class_name('g-button-blue-large').click()
+        time.sleep(0.4)
+        driver.find_element_by_xpath('//*[@id="fileTreeDialog"]/div[4]/a[2]/span/span').click()
         return True
+    return False
 
 
 def eyun_save(link, code=None):
@@ -229,7 +232,7 @@ def eyun_save(link, code=None):
         pass
         # print("没有提取码")
         # return False
-    time.sleep(2)
+    time.sleep(1)
     save_button = WebDriverWait(driver, 3) \
         .until(expected_conditions.visibility_of_element_located((By.CSS_SELECTOR, "span.text")))
     save_button.click()
@@ -598,7 +601,7 @@ def get_download_info():
 
 
 def save_process(db):
-    for i in db:
+    for i in db[1589:]:
         try:
             if isinstance(i["download"], list):
                 for x in i["download"]:
@@ -635,7 +638,6 @@ def save_process(db):
             else:
                 logger("无资源信息", i["title"], i["link"])
         except Exception as err:
-            driver.save_screenshot("SaveError-%s.png" % time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()))
             logger("程序错误", str(err))
 
 
@@ -646,7 +648,8 @@ def logger(level, *massage):
 
 
 if __name__ == '__main__':
-    timestamp = time.strftime("%Y%m%d%H%M%S", time.localtime())
+    # timestamp = time.strftime("%Y%m%d%H%M%S", time.localtime())
+    timestamp = '20181205173028'
     work_dir = os.getcwd()
     if os.name == 'nt':
         download_dir = "{}\{}".format(work_dir, "download")
