@@ -196,6 +196,7 @@ def pan_save(link, code=None):
                 (By.XPATH, '//*[@id="layoutMain"]/div[1]/div[1]/div/div[2]/div/div/div[2]/a[1]')))
             save_button.click()
         time.sleep(1)
+        index = 4
         try:
             save_path_item = driver.find_element_by_class_name('save-path-item')
             if "最近保存路径" in save_path_item.text and timestamp in save_path_item.text:
@@ -206,9 +207,10 @@ def pan_save(link, code=None):
                 if y.find_element_by_xpath('./div/span/span').text == timestamp:
                     y.click()
                     break
+            index -= 1
         # driver.find_element_by_class_name('g-button-blue-large').click()
         time.sleep(0.4)
-        driver.find_element_by_xpath('//*[@id="fileTreeDialog"]/div[4]/a[2]/span/span').click()
+        driver.find_element_by_xpath('//*[@id="fileTreeDialog"]/div[%s]/a[2]/span/span' % index).click()
         return True
     return False
 
@@ -674,7 +676,7 @@ if __name__ == '__main__':
 
     driver = webdriver.Chrome(options=options)
     driver.set_window_size(1600, 900)
-    driver.implicitly_wait(15)
+    driver.implicitly_wait(10)
 
     driver.command_executor._commands["send_command"] = ("POST", '/session/$sessionId/chromium/send_command')
     params = {'cmd': 'Page.setDownloadBehavior', 'params': {'behavior': 'allow', 'downloadPath': download_dir}}
