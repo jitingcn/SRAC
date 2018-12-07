@@ -175,25 +175,30 @@ def pan_save(link, code=None):
                 submit_button = WebDriverWait(driver, 5) \
                     .until(expected_conditions.visibility_of_element_located((By.CSS_SELECTOR, "span.text")))
                 code_field.send_keys(code)
+                time.sleep(0.2)
                 submit_button.click()
             except TimeoutException:
-                print("元素超时")
-                driver.save_screenshot("Error-%s.png" % time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()))
+                logger("元素超时", link)
+                driver.save_screenshot("./logs/error-%s.png" %
+                                       time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()))
                 return False
         else:
             print("没有提取码")
             return False
-    if WebDriverWait(driver, 7).until(expected_conditions.title_contains("免费")):
+    if WebDriverWait(driver, 5).until(expected_conditions.title_contains("免费")):
         try:
-            select_all_button = WebDriverWait(driver, 2).until(expected_conditions.visibility_of_element_located(
+            driver.implicitly_wait(0)
+            select_all_button = WebDriverWait(driver, 2.6).until(expected_conditions.visibility_of_element_located(
                 (By.XPATH, '//*[@id="shareqr"]/div[2]/div[2]/div/ul[1]/li[1]/div/span[1]')))
             select_all_button.click()
             save_button = driver.find_element_by_xpath(
                 '//*[@id="bd-main"]/div/div[1]/div/div[2]/div/div/div[2]/a[1]')
             save_button.click()
+            driver.implicitly_wait(10)
         except TimeoutException:
-            save_button = WebDriverWait(driver, 3).until(expected_conditions.element_to_be_clickable(
-                (By.XPATH, '//*[@id="layoutMain"]/div[1]/div[1]/div/div[2]/div/div/div[2]/a[1]')))
+            driver.implicitly_wait(10)
+            save_button = driver.find_element_by_xpath(
+                '//*[@id="layoutMain"]/div[1]/div[1]/div/div[2]/div/div/div[2]/a[1]')
             save_button.click()
         time.sleep(1)
         index = 4
@@ -227,8 +232,9 @@ def eyun_save(link, code=None):
             code_field.send_keys(code)
             submit_button.click()
         except TimeoutException:
-            print("元素超时")
-            driver.save_screenshot("Error-%s.png" % time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()))
+            logger("元素超时", link)
+            driver.save_screenshot("./logs/error-%s.png" %
+                                   time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()))
             return False
     else:
         pass
@@ -238,11 +244,13 @@ def eyun_save(link, code=None):
     save_button = WebDriverWait(driver, 3) \
         .until(expected_conditions.visibility_of_element_located((By.CSS_SELECTOR, "span.text")))
     save_button.click()
+    time.sleep(1.1)
     file_tree = driver.find_elements_by_xpath('//*[@id="fileTreeDialog"]/div[2]/div/ul/li/ul/li')
     for y in file_tree:
         if y.find_element_by_xpath('./div/span/span').text == timestamp:
             y.click()
             break
+    time.sleep(0.3)
     driver.find_element_by_xpath('//*[@id="fileTreeDialog"]/div[3]/a[2]/span/span').click()
     return True
     # except Exception as err:
@@ -603,7 +611,7 @@ def get_download_info():
 
 
 def save_process(db):
-    for i in db[1589:]:
+    for i in db[:]:
         try:
             if isinstance(i["download"], list):
                 for x in i["download"]:
@@ -611,7 +619,6 @@ def save_process(db):
                         status = False
                         if "status" in x:
                             if x["status"] == 'expired':
-                                status = False
                                 logger("资源链接失效", i["title"], i["link"], x["link"])
                                 continue
                         if "eyun.baidu.com" in x["link"]:
@@ -629,77 +636,89 @@ def save_process(db):
                         if not status:
                             logger("保存失败", i["title"], i["link"], x["link"])
                     except NoSuchElementException as err:
-                        driver.save_screenshot("Error-%s.png" % time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()))
-                        logger("找不到元素", str(err))
+                        driver.save_screenshot("./logs/error-%s.png" %
+                                               time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()))
+                        logger("找不到元素", i["title"], i["link"], str(err))
                     except TimeoutException as err:
-                        driver.save_screenshot("Error-%s.png" % time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()))
-                        logger("程序超时", str(err))
+                        driver.save_screenshot("./logs/error-%s.png" %
+                                               time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()))
+                        logger("程序超时", i["title"], i["link"], str(err))
                     except Exception as err:
-                        driver.save_screenshot("Error-%s.png" % time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()))
-                        logger("程序错误", str(err))
+                        driver.save_screenshot("./logs/error-%s.png" %
+                                               time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()))
+                        logger("程序错误", i["title"], i["link"], str(err))
             else:
                 logger("无资源信息", i["title"], i["link"])
         except Exception as err:
-            logger("程序错误", str(err))
+            logger("错误", str(err))
 
 
 def logger(level, *massage):
     log_timestamp = time.strftime("[%Y-%m-%d %H:%M:%S]", time.localtime())
-    with open("log-%s-save.txt" % timestamp, "a", encoding="utf-8") as f:
+    with open(log_dir + "log-%s.txt" % timestamp, "a", encoding="utf-8") as f:
         f.write("%s %s %s\n" % (log_timestamp, level, " ".join(massage)))
 
 
 if __name__ == '__main__':
-    # timestamp = time.strftime("%Y%m%d%H%M%S", time.localtime())
-    timestamp = '20181205173028'
+    timestamp = time.strftime("%Y%m%d%H%M%S", time.localtime())
+    # timestamp = '20181201000000'  # 中断后继续
     work_dir = os.getcwd()
     if os.name == 'nt':
-        download_dir = "{}\{}".format(work_dir, "download")
+        download_dir = "{}\{}\\".format(work_dir, "download")
+        log_dir = "{}\{}\\".format(work_dir, "logs")
         if not os.path.exists(download_dir):
-            print("下载文件夹不存在，创建")
             os.makedirs(download_dir)
+            os.makedirs(log_dir)
     else:  # os.name == 'posix'
-        download_dir = "{}/{}".format(work_dir, "download")
+        download_dir = "{}/{}/".format(work_dir, "download")
+        log_dir = "{}/{}/".format(work_dir, "logs")
         if not os.path.exists(download_dir):
-            print("下载文件夹不存在，创建")
             os.makedirs(download_dir)
+            os.makedirs(log_dir)
 
     options = webdriver.ChromeOptions()
-
-    # options.add_argument('--headless')  # 无窗口模式
+    headless = True  # 无窗口模式
+    if headless:
+        options.add_argument('--headless')
     options.add_argument('--log-level=3')
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+
     prefs = {'profile.default_content_settings.popups': 0, 'download.default_directory': download_dir,
              "download.prompt_for_download": False}
     options.add_experimental_option('prefs', prefs)
-
     driver = webdriver.Chrome(options=options)
-    driver.set_window_size(1600, 900)
+
     driver.implicitly_wait(10)
 
-    driver.command_executor._commands["send_command"] = ("POST", '/session/$sessionId/chromium/send_command')
-    params = {'cmd': 'Page.setDownloadBehavior', 'params': {'behavior': 'allow', 'downloadPath': download_dir}}
-    command_result = driver.execute("send_command", params)
+    if headless:  # 无头模式启用下载文档功能
+        driver.set_window_size(1920, 1080)
+        driver.command_executor._commands["send_command"] = ("POST", '/session/$sessionId/chromium/send_command')
+        params = {'cmd': 'Page.setDownloadBehavior', 'params': {'behavior': 'allow', 'downloadPath': download_dir}}
+        command_result = driver.execute("send_command", params)
+    else:
+        driver.maximize_window()
 
     # data = []
     baidu_login()
-    # lightnovel_login()
+    lightnovel_login()
     data = load_data()  # 加载初始化数据
     try:
         pass
-        # pages = int(input('请输入要获取信息的页数(全部获取请直接回车): ') or 0) or None
-        # data = get_thread(data, pages)
-        # save_data(data)
+        pages = int(input('请输入要获取信息的页数(全部获取请直接回车): ') or 0) or None
+        data = get_thread(data, pages)
+        save_data(data)
 
-        # get_thread_info()
-        # save_data(data)
+        get_thread_info()
+        save_data(data)
 
         save_process(data)
     except NoSuchElementException:
-        driver.save_screenshot("error-%s.png" % time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()))
+        driver.save_screenshot("./logs/error-%s.png" %
+                               time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()))
     except Exception as e:
-        driver.save_screenshot("error-%s.png" % time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()))
+        driver.save_screenshot("./logs/error-%s.png" %
+                               time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()))
         print(e)
     finally:
         save_data(data)
