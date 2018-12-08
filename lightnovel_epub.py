@@ -11,6 +11,7 @@ import os
 import re
 import time
 import json
+import codecs
 import getpass
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -32,7 +33,7 @@ def baidu_login():
         url = 'https://pan.baidu.com/'
         driver.get(url)
         print('Start logging in to BaiduNetDisk.')
-        # time.sleep(7)
+        print("Please wait for page loading...")
         chg_field = driver.find_element_by_id('TANGRAM__PSP_4__footerULoginBtn')
         chg_field.click()
 
@@ -41,7 +42,9 @@ def baidu_login():
         login_button = driver.find_element_by_id('TANGRAM__PSP_4__submit')
         error_field = driver.find_element_by_id("TANGRAM__PSP_4__error")
 
+        name_field.click()
         name_field.send_keys(str(input("Please enter your phone, email or username:")))
+        passwd_field.click()
         passwd_field.send_keys(str(getpass.getpass("Please enter your password (no echo):")))
         login_button.click()
         time.sleep(2)
@@ -57,39 +60,39 @@ def baidu_login():
             code_submit_button = driver.find_element_by_id('TANGRAM__37__button_submit')
             get_code_button.click()
             print("Verification code has been sent.")
-            # time.sleep(3)
+            time.sleep(3)
             code_field.send_keys(str(input("Please enter verification code:\n")))
             code_submit_button.click()
-            # time.sleep(3)
+            time.sleep(3)
         elif '用户名或密码有误' in error_field.text:
             print("Username or password is incorrect. Sign in with SMS instead.")
             sms_login_button = driver.find_element_by_id('TANGRAM__PSP_4__smsSwitchWrapper')
             sms_login_button.click()
             phone_number_field = driver.find_element_by_id('TANGRAM__PSP_4__userName')
             phone_number_field.send_keys(str(input("Please enter your phone number:")))
-            # time.sleep(0.2)
+            time.sleep(0.2)
             driver.find_element_by_id('TANGRAM__PSP_4__smsTimer').click()
-            # time.sleep(1)
+            time.sleep(1)
             sms_error_field = driver.find_element_by_id('TANGRAM__PSP_4__smsError')
             while sms_error_field.text == '手机号码格式不正确':
                 print('The phone number you entered is incorrect.')
                 phone_number_field.send_keys(str(input("Please enter your phone number:")))
-                # time.sleep(0.2)
+                time.sleep(0.2)
                 driver.find_element_by_id('TANGRAM__PSP_4__smsTimer').click()
-                # time.sleep(1)
+                time.sleep(1)
             sms_code_field = driver.find_element_by_id('TANGRAM__PSP_4__smsVerifyCode')
             sms_code_field.send_keys(str(input("Please enter verification code:")))
-            # time.sleep(0.2)
+            time.sleep(0.2)
             sms_login_button = driver.find_element_by_id('TANGRAM__PSP_4__smsSubmit')
             sms_login_button.click()
-            # time.sleep(1)
+            time.sleep(1)
             while sms_error_field == '动态密码错误':
                 sms_code_field.send_keys(str(input("The verification code is incorrect, please re-enter:")))
-                # time.sleep(0.2)
+                time.sleep(0.2)
                 sms_login_button = driver.find_element_by_id('TANGRAM__PSP_4__smsSubmit')
                 sms_login_button.click()
-                # time.sleep(1)
-            # time.sleep(2)
+                time.sleep(1)
+            time.sleep(2)
 
     else:
         driver.get("https://eyun.baidu.com/")
@@ -266,16 +269,16 @@ def lightnovel_login():
         cookies = None
     if not cookies:
         driver.get("https://www.lightnovel.cn/")
-        # time.sleep(2)
+        time.sleep(1)
 
         driver.find_element_by_xpath('//*[@id="lsform"]/div/div[2]/p[1]/a').click()
-        # time.sleep(2)
+        time.sleep(1)
 
         driver.switch_to.frame("ptlogin_iframe")
         driver.execute_script('document.getElementById("qlogin").style="display: none;"')
         driver.execute_script('document.getElementsByClassName("authLogin").style="display: none;"')
         driver.execute_script('document.getElementById("web_qr_login").style="display: block;"')
-        # time.sleep(1)
+        time.sleep(1)
 
         driver.find_element_by_name("u").clear()
         driver.find_element_by_name("u").send_keys(str(input("请输入QQ号:")))
@@ -664,15 +667,19 @@ if __name__ == '__main__':
     if os.name == 'nt':
         download_dir = "{}\\{}\\".format(work_dir, "download")
         log_dir = "{}\\{}\\".format(work_dir, "logs")
+        conf_dir = "{}\\{}\\".format(work_dir, "conf")
         if not os.path.exists(download_dir):
             os.makedirs(download_dir)
             os.makedirs(log_dir)
+            os.makedirs(conf_dir)
     else:  # os.name == 'posix'
         download_dir = "{}/{}/".format(work_dir, "download")
         log_dir = "{}/{}/".format(work_dir, "logs")
+        conf_dir = "{}\\{}\\".format(work_dir, "conf")
         if not os.path.exists(download_dir):
             os.makedirs(download_dir)
             os.makedirs(log_dir)
+            os.makedirs(conf_dir)
 
     options = webdriver.ChromeOptions()
     ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' \
