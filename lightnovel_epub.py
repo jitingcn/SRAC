@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 # lightnovel - lightnovel_epub.py
@@ -321,18 +321,18 @@ def login_check():
 def format_data(import_data):
     print("格式化数据", end=" -> ")
     print("排序", end=" -> ")
-    sorted_data = sorted(import_data, key=lambda x: re.findall('(\d{4,8})', x['link'])[-1], reverse=True)
+    sorted_data = sorted(import_data, key=lambda x: regex_link_id.findall(x['link'])[-1], reverse=True)
     formatted_data = []
     print("去重", end=" -> ")
     for item in sorted_data:
-        link_id = re.findall('(\d{4,8})', item['link'])[-1]
+        link_id = regex_link_id.findall(item['link'])[-1]
         if len(formatted_data) == 0:
             formatted_data.append(item)
             continue
-        if link_id != re.findall('(\d{4,8})', formatted_data[-1]['link'])[-1]:
+        if link_id != regex_link_id.findall(formatted_data[-1]['link'])[-1]:
             formatted_data.append(item)
         else:
-            # index = [re.findall('(\d{4,8})', s['link'])[-1] for s in formatted_data].index(i)
+            # index = [regex_link_id.findall(s['link'])[-1] for s in formatted_data].index(i)
             if len(item) > len(formatted_data[-1]):
                 formatted_data.pop()
                 formatted_data.append(item)
@@ -388,13 +388,13 @@ def find_code(dl_link_description, dl_link):
     post_massage_list = post_massage.text.split("\n")
     for y in post_massage_list:
         if dl_link_description in y:
-            code = re.findall("(?!epub)(?!\d+MB)(?!big5)([a-zA-Z0-9]{4})", y)
+            code = regex_find_code.findall(y)
             if len(code) == 0:
                 print("未找到提取码，扩大搜索范围", end=" -> ")
                 index = post_massage_list.index(y)
                 for z in range(index - 1, index + 2):
                     try:
-                        code = re.findall("(?!epub)(?!\d+MB)(?!big5)([a-zA-Z0-9]{4})", post_massage_list[z])
+                        code = regex_find_code.findall(post_massage_list[z])
                     except IndexError:
                         continue
                     if len(code) != 0:
@@ -415,8 +415,7 @@ def find_code(dl_link_description, dl_link):
                 if code in dl_link:
                     print('似乎没有提取码', code, "扩大搜索范围", end=" -> ")
                     try:
-                        code = re.findall("(?!epub)(?!\d+MB)(?!big5)([a-zA-Z0-9]{4})",
-                                          post_massage_list[post_massage_list.index(y) + 1])
+                        code = regex_find_code.findall(post_massage_list[post_massage_list.index(y) + 1])
                     except IndexError:
                         code = []
                     if len(code) != 0:
@@ -481,7 +480,7 @@ def get_thread(thread_info, last_page=None):
     time.sleep(2)
     if not last_page:
         last_page = int(
-            re.search("([\d]+)", driver.find_element_by_xpath('//*[@id="fd_page_bottom"]/div/a[10]').text).group(0))
+            re.search(r"([\d]+)", driver.find_element_by_xpath('//*[@id="fd_page_bottom"]/div/a[10]').text).group(0))
     elif last_page <= 1:
         last_page = 1
     time.sleep(1)
@@ -499,8 +498,8 @@ def add_thread_info(thread_info):
         thread = thread_list[x].find_element_by_xpath('./tr/th/a[2]')
         link = str(thread.get_attribute('href'))
         title = thread.text
-        link_id = re.findall('(\d{4,8})', link)[-1]
-        add = True if link_id not in [re.findall('(\d{4,8})', s['link'])[-1]
+        link_id = regex_link_id.findall(link)[-1]
+        add = True if link_id not in [regex_link_id.findall(s['link'])[-1]
                                       for s in thread_info] or len(thread_info) == 0 else False
         if add:
             print("添加", title)
@@ -660,12 +659,14 @@ def logger(level, *massage):
 
 
 if __name__ == '__main__':
+    regex_link_id = re.compile(r"^(\d{4,8})$")
+    regex_find_code = re.compile(r"^(?!epub)(?!\d+MB)(?!big5)([a-zA-Z0-9]{4})$")
     timestamp = time.strftime("%Y%m%d%H%M%S", time.localtime())
     # timestamp = '20181201000000'  # 中断后继续
     work_dir = os.getcwd()
     if os.name == 'nt':
-        download_dir = "{}\{}\\".format(work_dir, "download")
-        log_dir = "{}\{}\\".format(work_dir, "logs")
+        download_dir = "{}\\{}\\".format(work_dir, "download")
+        log_dir = "{}\\{}\\".format(work_dir, "logs")
         if not os.path.exists(download_dir):
             os.makedirs(download_dir)
             os.makedirs(log_dir)
@@ -677,12 +678,15 @@ if __name__ == '__main__':
             os.makedirs(log_dir)
 
     options = webdriver.ChromeOptions()
+    ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' \
+         '(KHTML, like Gecko) Chrome/70.0.3538.110 Safari/537.36'
     headless = True  # 无窗口模式
     if headless:
         options.add_argument('--headless')
     options.add_argument('--log-level=3')
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
+    options.add_argument('--user-agent=%s' % ua)
 
     prefs = {'profile.default_content_settings.popups': 0, 'download.default_directory': download_dir,
              "download.prompt_for_download": False}
