@@ -675,7 +675,7 @@ if __name__ == '__main__':
     else:  # os.name == 'posix'
         download_dir = "{}/{}/".format(work_dir, "download")
         log_dir = "{}/{}/".format(work_dir, "logs")
-        conf_dir = "{}\\{}\\".format(work_dir, "conf")
+        conf_dir = "{}/{}/".format(work_dir, "conf")
         if not os.path.exists(download_dir):
             os.makedirs(download_dir)
             os.makedirs(log_dir)
