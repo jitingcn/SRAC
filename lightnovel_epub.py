@@ -677,7 +677,7 @@ if __name__ == '__main__':
     options = webdriver.ChromeOptions()
     ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' \
          '(KHTML, like Gecko) Chrome/70.0.3538.110 Safari/537.36'
-    headless = False  # 无窗口模式
+    headless = input("Run Chrome in headless mode?")  # 无窗口模式
     if headless:
         options.add_argument('--headless')
     options.add_argument('--log-level=3')
