@@ -282,15 +282,15 @@ def lightnovel_login():
         driver.find_element_by_name("p").clear()
         driver.find_element_by_name("p").send_keys(str(getpass.getpass("请输入密码(无回显):")))
         driver.find_element_by_id("login_button").click()
-        # time.sleep(4)
+        time.sleep(4)
     else:
         driver.get("https://www.lightnovel.cn/")
-        # time.sleep(3)
+        time.sleep(1)
         # driver.delete_all_cookies()
         for x in cookies:
             driver.add_cookie(x)
     driver.get("https://www.lightnovel.cn/")
-    # time.sleep(2)
+    time.sleep(2)
     if not login_check():
         print('登录失败')
         driver.quit()
