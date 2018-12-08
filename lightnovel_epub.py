@@ -44,16 +44,12 @@ def baidu_login():
         name_field.send_keys(str(input("Please enter your phone, email or username:")))
         passwd_field.send_keys(str(getpass.getpass("Please enter your password (no echo):")))
         login_button.click()
-        # time.sleep(10)
+        time.sleep(2)
         if "验证码" in error_field.text:
-            print("需要验证码")
+            print("Login failed, need image verification.")
+            driver.quit()
             exit()
         if "登录失败" in error_field.text:
-            '''
-            print("Temporarily unable to log in, quit.")
-            driver.quit()
-            exit(1)
-            '''
             print("Login failed, may require email/phone verification.")
             # time.sleep(2)
             get_code_button = driver.find_element_by_id('TANGRAM__37__button_send_mobile')
@@ -106,12 +102,13 @@ def baidu_login():
             driver.add_cookie(x)
         driver.refresh()
         time.sleep(2)
-    # time.sleep(1)
+    time.sleep(1)
     if driver.title == "百度网盘-全部文件":
         print("Login successful.")
         baidu_prepare()
     else:
         print("Login failed, quit.")
+        time.sleep(300)
         driver.quit()
         exit(1)
 
@@ -680,7 +677,7 @@ if __name__ == '__main__':
     options = webdriver.ChromeOptions()
     ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' \
          '(KHTML, like Gecko) Chrome/70.0.3538.110 Safari/537.36'
-    headless = True  # 无窗口模式
+    headless = False  # 无窗口模式
     if headless:
         options.add_argument('--headless')
     options.add_argument('--log-level=3')
