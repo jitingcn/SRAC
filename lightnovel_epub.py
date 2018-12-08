@@ -459,7 +459,7 @@ def verify_baidu_pan_link(link, code=None):
                 return 'need code'
             else:
                 time.sleep(2)
-                driver.find_element_by_id('jgddmad').send_keys(code)
+                driver.find_element_by_id('hgejgNaM').send_keys(code)
                 submit = driver.find_element_by_css_selector('span.text')
                 submit.click()
                 time.sleep(2)
@@ -659,8 +659,8 @@ def logger(level, *massage):
 
 
 if __name__ == '__main__':
-    regex_link_id = re.compile(r"^(\d{4,8})$")
-    regex_find_code = re.compile(r"^(?!epub)(?!\d+MB)(?!big5)([a-zA-Z0-9]{4})$")
+    regex_link_id = re.compile(r"(\d{4,8})")
+    regex_find_code = re.compile(r"(?!epub)(?!\d+MB)(?!big5)([a-zA-Z0-9]{4})")
     timestamp = time.strftime("%Y%m%d%H%M%S", time.localtime())
     # timestamp = '20181201000000'  # 中断后继续
     work_dir = os.getcwd()
