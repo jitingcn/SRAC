@@ -11,7 +11,6 @@ import os
 import re
 import time
 import json
-import codecs
 import getpass
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -47,7 +46,7 @@ def baidu_login():
         passwd_field.click()
         passwd_field.send_keys(str(getpass.getpass("Please enter your password (no echo):")))
         login_button.click()
-        time.sleep(2)
+        time.sleep(0)
         if "验证码" in error_field.text:
             print("Login failed, need image verification.")
             driver.quit()
@@ -132,7 +131,7 @@ def baidu_prepare():
             time.sleep(0.5)
             break
     named_new_folder_field = driver.find_element_by_class_name("GadHyA")
-    submit_button = driver.find_element_by_css_selector('em.icon.umogj0D')
+    submit_button = driver.find_element_by_css_selector('em.icon.kwsdy8r')
     named_new_folder_field.send_keys(timestamp)
     print("A project folder named %s has been created." % timestamp)
     submit_button.click()
@@ -171,7 +170,7 @@ def pan_save(link, code=None):
         if code:
             try:
                 code_field = WebDriverWait(driver, 5) \
-                    .until(expected_conditions.visibility_of_element_located((By.ID, "hgejgNaM")))
+                    .until(expected_conditions.visibility_of_element_located((By.ID, "eqqo3Jx")))  # class QKKaIE LxgeIt
                 submit_button = WebDriverWait(driver, 5) \
                     .until(expected_conditions.visibility_of_element_located((By.CSS_SELECTOR, "span.text")))
                 code_field.send_keys(code)
@@ -670,7 +669,9 @@ if __name__ == '__main__':
         conf_dir = "{}\\{}\\".format(work_dir, "conf")
         if not os.path.exists(download_dir):
             os.makedirs(download_dir)
+        if not os.path.exists(log_dir):
             os.makedirs(log_dir)
+        if not os.path.exists(conf_dir):
             os.makedirs(conf_dir)
     else:  # os.name == 'posix'
         download_dir = "{}/{}/".format(work_dir, "download")
@@ -684,13 +685,13 @@ if __name__ == '__main__':
     options = webdriver.ChromeOptions()
     ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' \
          '(KHTML, like Gecko) Chrome/70.0.3538.110 Safari/537.36'
-    headless = input("Run Chrome in headless mode?")  # 无窗口模式
+    headless = input("Run Chrome in headless mode?(n)")  # 无窗口模式
     if headless:
         options.add_argument('--headless')
     options.add_argument('--log-level=3')
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
-    options.add_argument('--user-agent=%s' % ua)
+    options.add_argument('--user-agent=' + ua)
 
     prefs = {'profile.default_content_settings.popups': 0, 'download.default_directory': download_dir,
              "download.prompt_for_download": False}

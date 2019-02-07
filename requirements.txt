@@ -3,5 +3,5 @@ chardet
 idna
 lxml
 requests
-selenium
+selenium==3.8.0
 urllib3
